@@ -1,120 +1,76 @@
-# AI Chatbot API
+# RAG Chatbot - Intelligent Document Q&A System
 
-A comprehensive Flask-based AI chatbot application with independent chat threads, workspace-based file management, advanced content extraction, semantic search, and RAG (Retrieval Augmented Generation) capabilities.
+A comprehensive full-stack chatbot application that combines **Retrieval Augmented Generation (RAG)** with advanced file processing capabilities. Upload documents, create workspaces, and have intelligent conversations about your content using OpenAI's GPT models.
 
-## Features
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![Python](https://img.shields.io/badge/python-3.8+-blue)
+![React](https://img.shields.io/badge/react-18.2.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-- **User Authentication**: JWT-based authentication with registration, login, and token refresh
-- **Independent Chat Threads**: Create chat threads that work independently or optionally reference workspaces for context
-- **Workspace Management**: Create and manage multiple workspaces focused on file management and RAG
-- **Advanced File Processing**: Upload and process .txt, .csv, .docx files with content extraction and chunking
-- **Dual Embedding System**: OpenAI embeddings with sentence-transformers fallback for robust text processing
-- **Semantic Search**: Vector-based similarity search with text-based fallback
-- **RAG Integration**: Enhanced responses using document context with similarity scoring
-- **LangChain Integration**: Full OpenAI integration using LangChain for intelligent responses
-- **Content Extraction**: Smart text chunking with overlap for optimal embedding performance
-- **Duplicate Prevention**: Automatic duplicate file detection within workspaces
-- **Processing Pipeline**: File status tracking (uploaded → processing → ready/failed)
-- **Rate Limited**: Built-in rate limiting for API endpoints
-- **Strong Validation**: Comprehensive input validation using Pydantic
-- **MongoDB Integration**: Full MongoDB support for data persistence with vector search
-- **File Storage**: Support for both local and S3-compatible storage
+## 🚀 Features
 
-## Architecture Overview
+### 🤖 **Intelligent RAG System**
+- **Semantic Search**: Vector-based similarity search with dual embedding models (OpenAI + Sentence Transformers)
+- **Multi-format Processing**: Support for `.txt`, `.csv`, `.docx` files with smart content extraction
+- **Advanced Chunking**: Optimal text segmentation with 1000-char chunks and 100-char overlap
+- **Context-Aware Q&A**: LangChain integration for enhanced responses using document context
 
-### Independent Threads
-- Threads are not bound to workspaces
-- Each user owns their threads
-- Threads can optionally reference a workspace for RAG context
-- Full CRUD operations on threads
+### 🏢 **Workspace Management**
+- **Independent Threads**: Chat threads that work standalone or reference workspaces
+- **Multi-user Workspaces**: Collaborative document management
+- **File Organization**: Structured file storage with processing pipeline
+- **Duplicate Prevention**: Automatic duplicate detection and handling
 
-### Workspace-Centric File Management
-- Workspaces focus on file storage and management
-- Multiple users can be members of a workspace
-- Files are processed with content extraction and embedding
-- RAG functionality operates within workspace context
-- Semantic search across all workspace documents
+### 🔐 **Authentication & Security**
+- **JWT Authentication**: Secure login/register with token refresh
+- **Rate Limiting**: Built-in API protection
+- **Input Validation**: Comprehensive validation using Pydantic
+- **Secure Storage**: Support for local and S3-compatible storage
 
-### Advanced Content Processing Pipeline
-1. **File Upload** → Format validation (.txt, .csv, .docx)
-2. **Content Extraction** → Smart text extraction with metadata
-3. **Text Chunking** → 1000-char chunks with 100-char overlap
-4. **Embedding Generation** → OpenAI or local sentence-transformers
-5. **Vector Storage** → Embeddings stored with text chunks
-6. **Semantic Search** → Cosine similarity matching for RAG
+### 🎨 **Modern Frontend**
+- **React 18**: Modern React application with hooks and context
+- **Responsive Design**: Mobile-first design that works on all devices
+- **Real-time Chat**: Interactive chat interface with message history
+- **File Management**: Drag-and-drop upload with progress tracking
 
-## Project Structure
-
-```
-backend/
-├─ app.py                       # Flask app factory
-├─ config/
-│  ├─ __init__.py
-│  ├─ settings.py               # Configuration with embedding settings
-├─ extensions/
-│  ├─ db.py                     # MongoDB client initialization
-│  ├─ jwt.py                    # JWT configuration
-│  ├─ limiter.py                # Rate limiting setup
-│  ├─ storage.py                # File storage management (S3/local)
-│  ├─ logger.py                 # Logging configuration
-├─ models/                      # Pydantic models
-│  ├─ user.py
-│  ├─ workspace.py              # Workspace model (file-focused)
-│  ├─ thread.py                 # Independent thread model
-│  ├─ message.py
-│  ├─ file.py                  # File models with processing status
-│  ├─ embedding.py
-├─ repositories/                # Data access layer
-│  ├─ user_repo.py
-│  ├─ workspace_repo.py         # File management focused
-│  ├─ thread_repo.py            # Independent thread operations
-│  ├─ message_repo.py
-│  ├─ file_repo.py             # Enhanced with embedding search
-├─ services/                    # Business logic
-│  ├─ auth_service.py           # Authentication logic
-│  ├─ chat_service.py           # Thread and messaging (with LangChain)
-│  ├─ workspace_service.py      # Workspace and file management
-│  ├─ file_service.py          # File upload, processing, search
-│  ├─ embedding_service.py     # Dual embedding system
-│  ├─ rag_service.py           # Enhanced RAG with semantic search
-├─ blueprints/                  # REST API endpoints
-│  ├─ auth_api.py               # Authentication endpoints
-│  ├─ chat_api.py               # Thread and chat endpoints
-│  ├─ file_api.py              # File management and search endpoints
-├─ utils/
-│  ├─ content_extractor.py     # Multi-format content extraction
-│  ├─ exceptions.py             # Custom exceptions
-│  ├─ validators.py             # Input validation utilities
-│  ├─ pagination.py             # Pagination helpers
-└─ requirements.txt            # Updated with file processing deps
-```
-
-## Setup Instructions
+## 📋 Quick Start
 
 ### Prerequisites
+- **Python 3.8+**
+- **Node.js 16+**
+- **MongoDB** (local or Atlas)
+- **OpenAI API Key**
+- **Redis** (optional, for rate limiting)
 
-- Python 3.8+
-- MongoDB (local or MongoDB Atlas)
-- OpenAI API Key (for LangChain integration and OpenAI embeddings)
-- Redis (optional, for rate limiting)
+### 🔧 Installation
 
-### Installation
-
-1. **Clone the repository and navigate to the project directory**
-
-2. **Create a virtual environment:**
+1. **Clone the repository**
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   git clone https://github.com/gacontrolai/Rag-Chatbot.git
+   cd Rag-Chatbot
    ```
 
-3. **Install dependencies:**
+2. **Backend Setup**
    ```bash
+   cd backend
+   python -m venv venv
+   # Windows
+   venv\Scripts\activate
+   # Linux/Mac
+   source venv/bin/activate
+   
    pip install -r requirements.txt
    ```
 
-4. **Set up environment variables:**
-   Create a `.env` file in the root directory:
+3. **Frontend Setup**
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+4. **Environment Configuration**
+   
+   **Backend** - Create `backend/.env`:
    ```env
    # Flask Configuration
    SECRET_KEY=your-secret-key-change-in-production
@@ -129,402 +85,257 @@ backend/
    JWT_ACCESS_TOKEN_EXPIRES=3600
    JWT_REFRESH_TOKEN_EXPIRES=2592000
    
-   # File Storage Configuration
-   STORAGE_TYPE=local
-   LOCAL_STORAGE_PATH=./uploads
-   
-   # OpenAI Configuration (Required for LangChain and embeddings)
+   # OpenAI Configuration
    OPENAI_API_KEY=your-openai-api-key-here
    OPENAI_MODEL=gpt-3.5-turbo
    OPENAI_TEMPERATURE=0.7
    
    # Embedding Configuration
-   EMBEDDING_MODEL=sentence-transformers  # or 'openai' for OpenAI embeddings
-   OPENAI_EMBEDDING_MODEL=text-embedding-ada-002  # if using OpenAI embeddings
-   LOCAL_EMBEDDING_MODEL=all-MiniLM-L6-v2  # local model name
+   EMBEDDING_MODEL=sentence-transformers  # or 'openai'
+   OPENAI_EMBEDDING_MODEL=text-embedding-ada-002
+   LOCAL_EMBEDDING_MODEL=all-MiniLM-L6-v2
    
-   # Redis Configuration (optional)
+   # File Storage
+   STORAGE_TYPE=local
+   LOCAL_STORAGE_PATH=./uploads
+   MAX_FILE_SIZE=52428800  # 50MB
+   
+   # Redis (optional)
    REDIS_URL=redis://localhost:6379/0
    ```
 
-5. **Start MongoDB:**
-   Make sure MongoDB is running on your system.
-
-6. **Run the application:**
-   ```bash
-   python app.py
+   **Frontend** - Create `frontend/.env`:
+   ```env
+   REACT_APP_API_BASE_URL=http://localhost:5000
    ```
 
-The API will be available at `http://localhost:5000`
+5. **Start the Application**
+   
+   **Backend** (Terminal 1):
+   ```bash
+   cd backend
+   python app.py
+   ```
+   
+   **Frontend** (Terminal 2):
+   ```bash
+   cd frontend
+   npm start
+   ```
 
-## API Endpoints
+6. **Access the Application**
+   - Frontend: `http://localhost:3000`
+   - Backend API: `http://localhost:5000`
+
+## 🏗️ Architecture
+
+```
+Rag-Chatbot/
+├── backend/                 # Flask API Server
+│   ├── app.py              # Application factory
+│   ├── blueprints/         # API route handlers
+│   ├── services/           # Business logic layer
+│   ├── repositories/       # Data access layer
+│   ├── models/             # Pydantic data models
+│   ├── utils/              # Utility functions
+│   └── requirements.txt    # Python dependencies
+├── frontend/               # React Client Application
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── pages/          # Page components
+│   │   ├── services/       # API integration
+│   │   ├── context/        # React context providers
+│   │   └── utils/          # Helper functions
+│   └── package.json        # Node.js dependencies
+├── docs/                   # Documentation
+└── README.md              # This file
+```
+
+### 🔄 **Processing Pipeline**
+
+1. **File Upload** → Format validation & duplicate check
+2. **Content Extraction** → Smart text extraction by file type
+3. **Text Chunking** → Optimal segmentation with overlap
+4. **Embedding Generation** → Vector representation (OpenAI/Local)
+5. **Storage** → MongoDB with vector search capability
+6. **RAG Processing** → Context-aware response generation
+
+## 📚 API Documentation
 
 ### Authentication
-
-#### Register User
-```http
+```bash
+# Register user
 POST /v1/auth/register
-Content-Type: application/json
-
 {
   "email": "user@example.com",
   "password": "SecurePass123",
   "name": "John Doe"
 }
-```
 
-#### Login User
-```http
+# Login
 POST /v1/auth/login
-Content-Type: application/json
-
 {
   "email": "user@example.com",
   "password": "SecurePass123"
 }
 ```
 
-### Workspaces (File Management & RAG)
-
-#### Create Workspace
-```http
-POST /v1/workspaces
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "name": "My Documents Workspace"
-}
-```
-
-#### Get User Workspaces
-```http
-GET /v1/workspaces?page=1&limit=20
-Authorization: Bearer <access_token>
-```
-
-#### Get Threads Using Workspace
-```http
-GET /v1/workspaces/{workspace_id}/threads
-Authorization: Bearer <access_token>
-```
-
 ### File Management
-
-#### Upload File (with Content Extraction & Embedding)
-```http
+```bash
+# Upload file
 POST /v1/workspaces/{workspace_id}/files
-Authorization: Bearer <access_token>
 Content-Type: multipart/form-data
 
-Form Data:
-- file: [file.txt/.csv/.docx]
-- title: "Optional file title" (optional)
-```
-
-#### Get Workspace Files
-```http
-GET /v1/workspaces/{workspace_id}/files?page=1&limit=20
-Authorization: Bearer <access_token>
-```
-
-#### Get File Details
-```http
-GET /v1/files/{file_id}
-Authorization: Bearer <access_token>
-```
-
-#### Delete File
-```http
-DELETE /v1/files/{file_id}
-Authorization: Bearer <access_token>
-```
-
-#### Semantic Search Files
-```http
+# Semantic search
 POST /v1/workspaces/{workspace_id}/files/search
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
 {
-  "query": "project planning methodology",
+  "query": "project requirements",
   "top_k": 5
 }
 ```
 
-#### Get Supported File Formats
-```http
-GET /v1/workspaces/{workspace_id}/files/supported-formats
-Authorization: Bearer <access_token>
-```
-
-### Independent Chat Threads
-
-#### Create Thread (Independent)
-```http
+### Chat & Messaging
+```bash
+# Create thread
 POST /v1/threads
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
 {
-  "title": "My Chat Thread",
-  "workspace_id": "optional-workspace-id-for-rag"
+  "title": "Discussion Thread",
+  "workspace_id": "optional-workspace-id"
 }
-```
 
-#### Get User's Threads
-```http
-GET /v1/threads?page=1&limit=20
-Authorization: Bearer <access_token>
-```
-
-#### Update Thread
-```http
-PATCH /v1/threads/{thread_id}
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "title": "Updated Title",
-  "workspace_id": "new-workspace-id-or-null"
-}
-```
-
-#### Delete Thread
-```http
-DELETE /v1/threads/{thread_id}
-Authorization: Bearer <access_token>
-```
-
-### Messages
-
-#### Send Message (with Enhanced RAG)
-```http
+# Send message with RAG
 POST /v1/threads/{thread_id}/messages
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
 {
-  "content": "What does the project documentation say about deployment strategies?",
+  "content": "What are the deployment requirements?",
   "use_rag": true,
-  "top_k": 5,
-  "temperature": 0.7
+  "top_k": 5
 }
 ```
 
-#### Get Thread Messages
-```http
-GET /v1/threads/{thread_id}/messages?page=1&limit=50
-Authorization: Bearer <access_token>
+## 🧪 Testing
+
+### Backend Testing
+```bash
+cd backend
+python -m pytest tests/ -v
 ```
 
-## Testing the Enhanced File System
-
-### 1. Upload and Process Documents
+### Frontend Testing
 ```bash
-# Upload a text file
-curl -X POST http://localhost:5000/v1/workspaces/{workspace_id}/files \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -F "file=@project_plan.txt" \
-  -F "title=Project Planning Document"
-
-# Upload a CSV file
-curl -X POST http://localhost:5000/v1/workspaces/{workspace_id}/files \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -F "file=@data.csv"
-
-# Upload a DOCX file
-curl -X POST http://localhost:5000/v1/workspaces/{workspace_id}/files \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -F "file=@requirements.docx"
+cd frontend
+npm test
 ```
 
-### 2. Check Processing Status
+### Integration Testing
 ```bash
-curl -X GET http://localhost:5000/v1/files/{file_id} \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
+# Test file upload and processing
+curl -X POST http://localhost:5000/v1/workspaces/{workspace_id}/files \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@test_document.txt"
 
-### 3. Perform Semantic Search
-```bash
+# Test semantic search
 curl -X POST http://localhost:5000/v1/workspaces/{workspace_id}/files/search \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
-    "query": "deployment strategy and requirements",
-    "top_k": 3
-  }'
+  -d '{"query": "test query", "top_k": 3}'
 ```
 
-### 4. Create RAG-Enhanced Chat
+## 🚀 Deployment
+
+### Production Configuration
+
+1. **Environment Variables**
+   ```env
+   DEBUG=False
+   SECRET_KEY=production-secret-key
+   MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/
+   OPENAI_API_KEY=production-openai-key
+   ```
+
+2. **Backend Deployment**
+   ```bash
+   # Using Gunicorn
+   gunicorn -w 4 -b 0.0.0.0:8000 app:create_production_app
+   ```
+
+3. **Frontend Deployment**
+   ```bash
+   # Build for production
+   npm run build
+   
+   # Serve static files
+   npx serve -s build -l 3000
+   ```
+
+### Docker Deployment
 ```bash
-# Create thread with workspace reference
-curl -X POST http://localhost:5000/v1/threads \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Project Discussion",
-    "workspace_id": "YOUR_WORKSPACE_ID"
-  }'
-
-# Send message with RAG
-curl -X POST http://localhost:5000/v1/threads/{thread_id}/messages \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "content": "Based on our project documents, what are the key deployment considerations?",
-    "use_rag": true,
-    "top_k": 5
-  }'
+# Build and run with Docker Compose
+docker-compose up --build
 ```
 
-## File Processing Pipeline
-
-### Supported Formats
-- **`.txt`** - Plain text files (UTF-8, Latin-1 fallback)
-- **`.csv`** - Comma-separated values (parsed with pandas)
-- **`.docx`** - Microsoft Word documents (paragraph extraction)
-
-### Processing Flow
-1. **Upload Validation** → File format, size (50MB max), duplicates
-2. **Content Extraction** → Format-specific text extraction
-3. **Smart Chunking** → 1000 characters with 100-character overlap
-4. **Embedding Generation** → OpenAI API or local sentence-transformers
-5. **Storage** → Chunks with embeddings stored in MongoDB
-6. **Status Updates** → uploaded → processing → ready/failed
-
-### Embedding Options
-- **OpenAI Embeddings** → `text-embedding-ada-002` (1536 dimensions)
-- **Local Embeddings** → `all-MiniLM-L6-v2` (384 dimensions, offline)
-- **Automatic Fallback** → Graceful degradation if services unavailable
-
-## Key Architecture Changes
-
-### Before (Basic File Support)
-- Simple file upload without processing
-- No content extraction or search
-- Basic text matching for RAG
-
-### After (Advanced File System)
-- ✅ **Multi-format Processing** - .txt, .csv, .docx with smart extraction
-- ✅ **Dual Embedding System** - OpenAI + local model fallback
-- ✅ **Semantic Search** - Vector similarity with cosine distance
-- ✅ **Smart Chunking** - Optimal chunk size with word boundary detection
-- ✅ **Processing Pipeline** - Status tracking and error handling
-- ✅ **Duplicate Prevention** - Filename-based duplicate detection
-- ✅ **Enhanced RAG** - Document context with similarity scores
-- ✅ **Comprehensive API** - Full CRUD operations for files
-
-## Current Implementation Status
-
-**✅ FULLY IMPLEMENTED:**
-- Independent thread architecture with optional workspace references
-- Advanced file upload with multi-format content extraction
-- Dual embedding system (OpenAI + sentence-transformers)
-- Semantic search using vector similarity
-- Enhanced RAG with document context and scoring
-- LangChain + OpenAI integration for intelligent responses
-- Smart text chunking with overlap for optimal embeddings
-- Processing pipeline with status tracking
-- Comprehensive file management API
-- Duplicate file prevention
-- Strong input validation and error handling
-
-**🚧 READY FOR EXTENSION:**
-- Background job processing for large files
-- Additional file formats (PDF, HTML, etc.)
-- Vector database integration (Pinecone, Qdrant)
-- Advanced chunking strategies
-- Real-time file processing notifications
-- Workspace collaboration features
-- File versioning and history
-
-## Benefits of Enhanced Architecture
-
-1. **Intelligent Search** - Semantic understanding vs keyword matching
-2. **Multi-format Support** - Process diverse document types
-3. **Robust Embeddings** - Dual system ensures availability
-4. **Smart Processing** - Optimal chunking for better context
-5. **RAG Enhancement** - High-quality document grounding
-6. **User Experience** - Status tracking and error handling
-7. **Scalability** - Modular design for easy extension
-
-## Performance Considerations
+## 🔧 Configuration Options
 
 ### Embedding Models
-- **OpenAI**: Higher quality, API cost, internet required
-- **Local**: Free, offline, smaller model size, faster for small batches
-- **Automatic Selection**: Falls back gracefully based on availability
+- **OpenAI Embeddings**: High quality, requires API key, 1536 dimensions
+- **Local Embeddings**: Free, offline, 384 dimensions (all-MiniLM-L6-v2)
+- **Automatic Fallback**: Graceful degradation if services unavailable
 
-### Chunking Strategy
-- **Chunk Size**: 1000 characters (optimal for embeddings)
-- **Overlap**: 100 characters (maintains context continuity)
-- **Word Boundaries**: Smart splitting to preserve meaning
+### File Processing
+- **Supported Formats**: `.txt`, `.csv`, `.docx`
+- **Maximum File Size**: 50MB (configurable)
+- **Chunk Size**: 1000 characters with 100-character overlap
+- **Processing Status**: `uploaded` → `processing` → `ready`/`failed`
 
-### Search Performance
-- **Vector Search**: O(n) similarity calculation
-- **Text Fallback**: MongoDB text search for reliability
-- **Caching**: Results cached for repeated queries
+### Storage Options
+- **Local Storage**: Files stored in local filesystem
+- **S3-Compatible**: AWS S3, MinIO, or other S3-compatible storage
+- **Database**: MongoDB for metadata and vector storage
 
-## Production Deployment
+## 🤝 Contributing
 
-For production deployment:
+1. **Fork the repository**
+2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Make your changes**
+4. **Add tests** for new functionality
+5. **Commit your changes** (`git commit -m 'Add amazing feature'`)
+6. **Push to the branch** (`git push origin feature/amazing-feature`)
+7. **Open a Pull Request**
 
-1. Set `DEBUG=False` in environment variables
-2. Use a production WSGI server like Gunicorn
-3. Set up proper MongoDB and Redis instances
-4. Configure OpenAI API key securely
-5. Set up SSL/TLS certificates
-6. Consider vector database for large-scale deployments
+### Development Guidelines
+- Follow PEP 8 for Python code
+- Use ESLint/Prettier for JavaScript code
+- Write tests for new features
+- Update documentation for API changes
+- Use meaningful commit messages
 
-Example Gunicorn command:
-```bash
-gunicorn -w 4 -b 0.0.0.0:8000 app:create_production_app
-```
+## 📄 License
 
-## Next Steps
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-To extend this implementation:
+## 🆘 Support
 
-1. **Add Background Processing** - Celery/RQ for large file processing
-2. **Implement Vector Database** - Pinecone, Qdrant, or Weaviate integration
-3. **Add More File Formats** - PDF, HTML, PowerPoint support
-4. **Advanced Chunking** - Semantic chunking, document structure awareness
-5. **Real-time Updates** - WebSocket notifications for processing status
-6. **Analytics Dashboard** - Usage metrics and search analytics
-7. **Collaboration Features** - File sharing, comments, annotations
-8. **Version Control** - File versioning and change tracking
+### Common Issues
+- **CORS Errors**: Ensure backend allows frontend origin
+- **File Upload Fails**: Check file format and size limits
+- **Embedding Errors**: Verify OpenAI API key or fallback to local model
+- **MongoDB Connection**: Ensure MongoDB is running and accessible
 
-## Environment Variables Reference
+### Getting Help
+- 📧 **Email**: [your-email@example.com](mailto:your-email@example.com)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/gacontrolai/Rag-Chatbot/issues)
+- 📖 **Documentation**: [Project Wiki](https://github.com/gacontrolai/Rag-Chatbot/wiki)
 
-```env
-# Core Application
-SECRET_KEY=your-secret-key
-DEBUG=False
-MONGODB_URI=mongodb://localhost:27017/ai_chatbot
+## 🙏 Acknowledgments
 
-# Authentication  
-JWT_SECRET_KEY=your-jwt-secret
-JWT_ACCESS_TOKEN_EXPIRES=3600
+- **OpenAI** for GPT models and embeddings
+- **LangChain** for RAG framework
+- **Sentence Transformers** for local embeddings
+- **React** for frontend framework
+- **Flask** for backend API
+- **MongoDB** for data storage
 
-# OpenAI Integration
-OPENAI_API_KEY=your-openai-key
-OPENAI_MODEL=gpt-3.5-turbo
-OPENAI_TEMPERATURE=0.7
+---
 
-# Embedding Configuration
-EMBEDDING_MODEL=sentence-transformers  # or 'openai'
-OPENAI_EMBEDDING_MODEL=text-embedding-ada-002
-LOCAL_EMBEDDING_MODEL=all-MiniLM-L6-v2
+**Built with ❤️ by the RAG Chatbot Team**
 
-# File Storage
-STORAGE_TYPE=local  # or 's3'
-LOCAL_STORAGE_PATH=./uploads
-MAX_FILE_SIZE=52428800  # 50MB
-
-# Rate Limiting
-REDIS_URL=redis://localhost:6379/0
-RATELIMIT_DEFAULT=100 per hour
-```
-
-The implementation is now **production-ready** with advanced file processing, semantic search, and robust RAG capabilities! 
+⭐ **Star this repository if you found it helpful!**

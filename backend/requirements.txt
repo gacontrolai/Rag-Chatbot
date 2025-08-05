@@ -1,0 +1,63 @@
+# ============================================
+# RAG CHATBOT BACKEND REQUIREMENTS
+# ============================================
+
+# ============ CORE FLASK FRAMEWORK ============
+Flask==2.3.3
+Werkzeug==2.3.7
+
+# ============ API FRAMEWORK ============
+flask-smorest==0.42.1
+marshmallow==3.20.1
+
+# ============ AUTHENTICATION & SECURITY ============
+flask-jwt-extended==4.5.3
+bcrypt==4.0.1
+
+# ============ CORS & RATE LIMITING ============
+flask-cors==4.0.0
+flask-limiter==3.5.0
+
+# ============ DATA VALIDATION ============
+pydantic==2.4.2
+email-validator==2.0.0
+
+# ============ DATABASE ============
+pymongo==4.5.0
+motor==3.3.1
+
+# ============ ENVIRONMENT & CONFIG ============
+python-dotenv==1.0.0
+
+# ============ CLOUD STORAGE ============
+boto3==1.28.57
+
+# ============ AI & MACHINE LEARNING ============
+openai==0.28.1
+langchain==0.1.0
+langchain-openai==0.0.2.post1
+
+# ============ EMBEDDINGS & NLP ============
+sentence-transformers==2.2.2
+numpy==1.24.3
+
+# ============ CACHING & BACKGROUND TASKS ============
+redis==5.0.1
+celery==5.3.4
+
+# ============ FILE PROCESSING ============
+python-docx==0.8.11
+pandas==2.1.2
+
+# ============ PRODUCTION SERVER ============
+gunicorn==21.2.0
+
+# ============ TESTING ============
+pytest==7.4.2
+pytest-asyncio==0.21.1
+
+# ============ DEVELOPMENT TOOLS ============
+# Uncomment for development
+# black==23.9.1
+# flake8==6.1.0
+# pytest-cov==4.1.0 
