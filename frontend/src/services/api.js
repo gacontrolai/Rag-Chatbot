@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { isAuthError } from '../utils/errorHandler';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 // Create axios instance
 const api = axios.create({
@@ -36,8 +37,11 @@ api.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/v1/auth/refresh`, {
-            refresh_token: refreshToken
+          // Send refresh token in Authorization header (backend expects @jwt_required(refresh=True))
+          const response = await axios.post(`${API_BASE_URL}/v1/auth/refresh`, {}, {
+            headers: {
+              'Authorization': `Bearer ${refreshToken}`
+            }
           });
           
           const { access_token } = response.data;
@@ -56,6 +60,7 @@ api.interceptors.response.use(
       }
     }
     
+    // Let other errors pass through for handling by components
     return Promise.reject(error);
   }
 );

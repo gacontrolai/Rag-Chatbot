@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Send, Bot, User, X, Paperclip, LogIn, UserPlus } from 'lucide-react';
+import { Send, Bot, User, X, Paperclip, LogIn, UserPlus, Sparkles, FileText, Search, Building2 } from 'lucide-react';
 import Header from '../components/Header';
 
 const PublicChat = () => {
@@ -102,15 +102,31 @@ const PublicChat = () => {
         {/* Info Sidebar */}
         <div className="info-sidebar">
           <div className="info-content">
-            <h3>🤖 AI Chatbot Demo</h3>
-            <p>Try out our AI assistant! For full features including:</p>
+            <div className="sidebar-header">
+              <div className="sidebar-icon">
+                <Sparkles size={24} />
+              </div>
+              <h3>IntelliDoc AI Assistant</h3>
+            </div>
+            <p>Experience the power of professional AI-driven document analysis. Unlock advanced features with an account:</p>
             
             <ul className="features-list">
-              <li>📄 Upload your documents</li>
-              <li>💾 Save conversation history</li>
-              <li>🔍 Search through your files</li>
-              <li>🏢 Create workspaces</li>
-              <li>📚 Build knowledge bases</li>
+              <li>
+                <FileText size={18} />
+                <span>Upload & analyze documents</span>
+              </li>
+              <li>
+                <Search size={18} />
+                <span>Intelligent content search</span>
+              </li>
+              <li>
+                <Building2 size={18} />
+                <span>Organize workspaces</span>
+              </li>
+              <li>
+                <Bot size={18} />
+                <span>AI-powered insights</span>
+              </li>
             </ul>
             
             <div className="auth-buttons">
@@ -125,8 +141,8 @@ const PublicChat = () => {
             </div>
 
             <div className="demo-note">
-              <h4>Demo Mode</h4>
-              <p>You're currently in demo mode. Responses are simulated. Sign in for real AI-powered answers based on your documents!</p>
+              <h4>📋 Demo Mode</h4>
+              <p>You're experiencing our demo environment. Sign in to access real AI-powered document analysis and personalized responses.</p>
             </div>
           </div>
         </div>
@@ -134,8 +150,10 @@ const PublicChat = () => {
         {/* Main Chat Area */}
         <div className="chat-main">
           <div className="chat-header">
-            <h2>🚀 Try Our AI Assistant</h2>
-            <p>Ask any question to see how it works!</p>
+            <div className="chat-title">
+              <h2>Professional AI Assistant</h2>
+              <p>Ask questions to experience intelligent document analysis</p>
+            </div>
           </div>
 
           <div className="chat-container">
@@ -143,29 +161,28 @@ const PublicChat = () => {
               {messages.length === 0 ? (
                 <div className="chat-welcome">
                   <div className="welcome-content">
-                    <Bot size={48} />
-                    <h1>Hello! How can I help you today?</h1>
-                    <p>Try asking me anything to see how the AI assistant works</p>
+                    <h1>Welcome to IntelliDoc AI</h1>
+                    <p>Experience professional document analysis and intelligent Q&A. Ask me anything to see how our AI assistant works.</p>
                     <div className="example-questions">
-                      <h4>Example questions you can try:</h4>
+                      <h4>Try these professional use cases:</h4>
                       <div className="question-chips">
                         <button 
                           className="question-chip"
-                          onClick={() => setNewMessage("What can you help me with?")}
+                          onClick={() => setNewMessage("How does document analysis work?")}
                         >
-                          What can you help me with?
+                          How does document analysis work?
                         </button>
                         <button 
                           className="question-chip"
-                          onClick={() => setNewMessage("How does document upload work?")}
+                          onClick={() => setNewMessage("What file formats do you support?")}
                         >
-                          How does document upload work?
+                          What file formats do you support?
                         </button>
                         <button 
                           className="question-chip"
-                          onClick={() => setNewMessage("Tell me about your features")}
+                          onClick={() => setNewMessage("Tell me about workspace features")}
                         >
-                          Tell me about your features
+                          Tell me about workspace features
                         </button>
                       </div>
                     </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User, LogOut, Settings, MessageSquare, Home, Briefcase } from 'lucide-react';
+import { User, LogOut, Settings, Brain, Home, Briefcase, Sparkles } from 'lucide-react';
 
 const Header = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -32,8 +32,14 @@ const Header = () => {
       <div className="header-container">
         <div className="header-left">
           <div className="logo" onClick={() => navigate('/')}>
-            <MessageSquare size={24} />
-            <span>Knowledge Chatbot</span>
+            <div className="logo-icon">
+              <Brain size={28} />
+              <Sparkles size={14} className="logo-sparkle" />
+            </div>
+            <div className="logo-text">
+              <span className="logo-main">IntelliDoc</span>
+              <span className="logo-sub">AI Assistant</span>
+            </div>
           </div>
           
           <nav className="nav-links">
@@ -61,7 +67,9 @@ const Header = () => {
           {isAuthenticated ? (
             <div className="user-menu-container">
               <button onClick={toggleUserMenu} className="user-avatar">
-                <User size={20} />
+                <div className="user-avatar-circle">
+                  <User size={18} />
+                </div>
                 <span className="user-name">{user?.username || user?.email}</span>
               </button>
               

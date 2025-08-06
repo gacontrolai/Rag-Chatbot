@@ -291,7 +291,6 @@ log/
 *.model
 *.pkl
 *.joblib
-models/
 embeddings/
 vectors/
 

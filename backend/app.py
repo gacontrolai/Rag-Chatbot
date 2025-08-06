@@ -33,8 +33,13 @@ def create_app(config_name=None):
     print("Initializing logger")
     init_logger(app)
     
-    # Enable CORS
-    CORS(app)
+    # Configure CORS properly for separate server deployment
+    cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')
+    CORS(app, 
+         origins=cors_origins,
+         allow_headers=['Content-Type', 'Authorization'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+         supports_credentials=True)
     
     # Register blueprints
     app.register_blueprint(auth_bp)

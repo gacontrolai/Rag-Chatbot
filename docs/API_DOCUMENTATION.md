@@ -4,7 +4,8 @@ Complete API reference for the RAG Chatbot backend.
 
 ## Base URL
 ```
-http://localhost:5000
+http://localhost:5000  (Development)
+https://api.yourdomain.com  (Production)
 ```
 
 ## Authentication
@@ -33,15 +34,17 @@ Content-Type: application/json
 **Response:**
 ```json
 {
-  "success": true,
-  "data": {
-    "user": {
-      "id": "user_id",
-      "email": "user@example.com",
-      "name": "John Doe"
-    },
-    "access_token": "jwt_token",
-    "refresh_token": "refresh_token"
+  "user": {
+    "id": "user_id",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "plan": "free",
+    "created_at": "2025-08-06T10:00:00Z",
+    "updated_at": "2025-08-06T10:00:00Z"
+  },
+  "tokens": {
+    "access_token": "jwt_access_token",
+    "refresh_token": "jwt_refresh_token"
   }
 }
 ```
@@ -62,6 +65,8 @@ Content-Type: application/json
 POST /v1/auth/refresh
 Authorization: Bearer <refresh_token>
 ```
+
+**Note**: The refresh token must be sent in the Authorization header, not in the request body.
 
 #### Get Current User
 ```http

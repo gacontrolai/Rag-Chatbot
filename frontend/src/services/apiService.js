@@ -4,18 +4,24 @@ import api from './api';
 export const authService = {
   register: async (userData) => {
     const response = await api.post('/v1/auth/register', userData);
-    return response.data;
+    const { user, tokens } = response.data;
+    
+    // Store tokens (backend returns nested structure)
+    localStorage.setItem('accessToken', tokens.access_token);
+    localStorage.setItem('refreshToken', tokens.refresh_token);
+    
+    return { user, tokens };
   },
 
   login: async (credentials) => {
     const response = await api.post('/v1/auth/login', credentials);
-    const { access_token, refresh_token } = response.data;
+    const { user, tokens } = response.data;
     
-    // Store tokens
-    localStorage.setItem('accessToken', access_token);
-    localStorage.setItem('refreshToken', refresh_token);
+    // Store tokens (backend returns nested structure)
+    localStorage.setItem('accessToken', tokens.access_token);
+    localStorage.setItem('refreshToken', tokens.refresh_token);
     
-    return response.data;
+    return { user, tokens };
   },
 
   logout: () => {
@@ -30,8 +36,10 @@ export const authService = {
 
   refreshToken: async () => {
     const refreshToken = localStorage.getItem('refreshToken');
-    const response = await api.post('/v1/auth/refresh', {
-      refresh_token: refreshToken
+    const response = await api.post('/v1/auth/refresh', {}, {
+      headers: {
+        'Authorization': `Bearer ${refreshToken}`
+      }
     });
     return response.data;
   }
