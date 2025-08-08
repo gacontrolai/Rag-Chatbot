@@ -228,4 +228,82 @@ def get_vector_store_stats():
                 'code': 'INTERNAL_ERROR',
                 'message': f'An error occurred while fetching vector store stats: {str(e)}'
             }
+        }, 500
+
+@file_bp.route('/workspaces/<workspace_id>/files/search-with-rerank', methods=['POST'])
+@jwt_required()
+@limiter.limit("30 per hour")
+def search_files_with_rerank_metrics(workspace_id):
+    """Search files with detailed reranking metrics for analysis"""
+    try:
+        current_user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        if not data or 'query' not in data:
+            return {'error': {'code': 'VALIDATION_ERROR', 'message': 'Search query is required'}}, 400
+        
+        query = data['query'].strip()
+        if not query:
+            return {'error': {'code': 'VALIDATION_ERROR', 'message': 'Search query cannot be empty'}}, 400
+        
+        top_k = data.get('top_k', 5)
+        if not isinstance(top_k, int) or top_k < 1 or top_k > 20:
+            return {'error': {'code': 'VALIDATION_ERROR', 'message': 'top_k must be between 1 and 20'}}, 400
+        
+        # Verify workspace access
+        from repositories.workspace_repo import WorkspaceRepository
+        workspace_repo = WorkspaceRepository()
+        if not workspace_repo.is_member(workspace_id, current_user_id):
+            raise PermissionError("Access denied to workspace")
+        
+        # Perform enhanced search with reranking metrics
+        from services.rag_service import RAGService
+        rag_service = RAGService()
+        result = rag_service.search_context_with_rerank_metrics(workspace_id, query, top_k)
+        
+        return {
+            'results': result.get('results', []),
+            'metrics': result.get('metrics', {}),
+            'query': query,
+            'reranker_config': {
+                'retrieval_multiplier': rag_service.retrieval_multiplier,
+                'max_candidates': rag_service.max_candidates,
+                'reranker_available': rag_service.reranker_service.is_available(),
+                'reranker_type': rag_service.reranker_service.reranker_type
+            }
+        }, 200
+        
+    except PermissionError as e:
+        return format_error_response(e, 403)
+    except Exception as e:
+        return {
+            'error': {
+                'code': 'INTERNAL_ERROR',
+                'message': f'An error occurred while searching with rerank metrics: {str(e)}'
+            }
+        }, 500
+
+@file_bp.route('/reranker/stats', methods=['GET'])
+@jwt_required()
+def get_reranker_stats():
+    """Get reranker service statistics and configuration"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        from services.reranker_service import RerankerService
+        reranker_service = RerankerService()
+        
+        stats = reranker_service.get_reranker_stats()
+        
+        return {
+            'reranker_stats': stats,
+            'message': 'Reranker statistics retrieved successfully'
+        }, 200
+        
+    except Exception as e:
+        return {
+            'error': {
+                'code': 'INTERNAL_ERROR',
+                'message': f'An error occurred while fetching reranker stats: {str(e)}'
+            }
         }, 500 

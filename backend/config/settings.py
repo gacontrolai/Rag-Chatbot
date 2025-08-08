@@ -40,6 +40,12 @@ class Config:
     OPENAI_EMBEDDING_MODEL = os.getenv('OPENAI_EMBEDDING_MODEL', 'text-embedding-ada-002')
     LOCAL_EMBEDDING_MODEL = os.getenv('LOCAL_EMBEDDING_MODEL', 'all-MiniLM-L6-v2')
     
+    # Reranker Configuration
+    RERANKER_TYPE = os.getenv('RERANKER_TYPE', 'cross-encoder')  # 'cross-encoder', 'openai', 'hybrid', 'disabled'
+    CROSS_ENCODER_MODEL = os.getenv('CROSS_ENCODER_MODEL', 'cross-encoder/ms-marco-MiniLM-L-6-v2')
+    RERANKER_RETRIEVAL_MULTIPLIER = int(os.getenv('RERANKER_RETRIEVAL_MULTIPLIER', '2'))  # Retrieve 2x candidates for reranking
+    RERANKER_MAX_CANDIDATES = int(os.getenv('RERANKER_MAX_CANDIDATES', '20'))  # Maximum candidates to retrieve
+    
     # File Processing Configuration
     SUPPORTED_FILE_FORMATS = ['.txt', '.csv', '.docx']
     
