@@ -97,16 +97,25 @@ export const WorkspaceProvider = ({ children }) => {
     try {
       console.log('Creating workspace with data:', workspaceData);
       const newWorkspace = await workspaceService.createWorkspace(workspaceData);
-      console.log('Created workspace:', newWorkspace);
+      console.log('Created workspace response:', newWorkspace);
+      
+      if (!newWorkspace || !newWorkspace.id) {
+        throw new Error('Invalid workspace response - missing ID');
+      }
+      
       dispatch({ type: WORKSPACE_ACTIONS.ADD_WORKSPACE, payload: newWorkspace });
       // Refresh the workspace list to ensure consistency
       await fetchWorkspaces();
       return newWorkspace;
     } catch (error) {
       console.error('Error creating workspace:', error);
+      const errorMessage = error.response?.data?.error?.message || 
+                          error.response?.data?.message || 
+                          error.message ||
+                          'Failed to create workspace';
       dispatch({ 
         type: WORKSPACE_ACTIONS.SET_ERROR, 
-        payload: error.response?.data?.error?.message || error.response?.data?.message || 'Failed to create workspace' 
+        payload: errorMessage
       });
       throw error;
     }

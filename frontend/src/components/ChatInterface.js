@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { threadService, messageService, fileService } from '../services/apiService';
-import { Send, Plus, MessageSquare, User, Bot, Upload, FileText, X, Menu, Paperclip, ChevronRight, ExternalLink, Trash2, AlertTriangle } from 'lucide-react';
+import { threadService, messageService, fileService, workspaceService } from '../services/apiService';
+import { Send, Plus, MessageSquare, User, Bot, Upload, FileText, X, Menu, Paperclip, ChevronRight, ExternalLink, Trash2, AlertTriangle, ChevronDown, Building2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ChatInterface = ({ workspaceId }) => {
   const [threads, setThreads] = useState([]);
@@ -18,12 +19,34 @@ const ChatInterface = ({ workspaceId }) => {
   const [uploading, setUploading] = useState(false);
   const [deletingFile, setDeletingFile] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [workspaces, setWorkspaces] = useState([]);
+  const [currentWorkspace, setCurrentWorkspace] = useState(null);
+  const [showWorkspaceSwitcher, setShowWorkspaceSwitcher] = useState(false);
+  const [loadingWorkspaces, setLoadingWorkspaces] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const workspaceSwitcherRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Close workspace switcher when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (workspaceSwitcherRef.current && !workspaceSwitcherRef.current.contains(event.target)) {
+        setShowWorkspaceSwitcher(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     fetchThreads();
     fetchFiles();
+    fetchWorkspaces();
+    fetchCurrentWorkspace();
   }, [workspaceId]);
 
   useEffect(() => {
@@ -105,6 +128,33 @@ const ChatInterface = ({ workspaceId }) => {
     } catch (err) {
       console.error('Failed to fetch files:', err);
       setFiles([]);
+    }
+  };
+
+  const fetchWorkspaces = async () => {
+    if (loadingWorkspaces) return;
+    
+    setLoadingWorkspaces(true);
+    try {
+      const workspaces = await workspaceService.getWorkspaces();
+      setWorkspaces(Array.isArray(workspaces) ? workspaces : []);
+    } catch (err) {
+      console.error('Failed to fetch workspaces:', err);
+      setWorkspaces([]);
+    } finally {
+      setLoadingWorkspaces(false);
+    }
+  };
+
+  const fetchCurrentWorkspace = async () => {
+    if (!workspaceId) return;
+    
+    try {
+      const workspace = await workspaceService.getWorkspace(workspaceId);
+      setCurrentWorkspace(workspace);
+    } catch (err) {
+      console.error('Failed to fetch current workspace:', err);
+      setCurrentWorkspace(null);
     }
   };
 
@@ -250,6 +300,21 @@ const ChatInterface = ({ workspaceId }) => {
     setShowDeleteConfirm(null);
   };
 
+  const handleWorkspaceSwitch = (workspace) => {
+    setShowWorkspaceSwitcher(false);
+    if (workspace.id !== workspaceId) {
+      // Navigate to the new workspace
+      navigate(`/workspace/${workspace.id}`);
+    }
+  };
+
+  const toggleWorkspaceSwitcher = () => {
+    setShowWorkspaceSwitcher(!showWorkspaceSwitcher);
+    if (!showWorkspaceSwitcher && workspaces.length === 0) {
+      fetchWorkspaces();
+    }
+  };
+
   const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -342,6 +407,59 @@ const ChatInterface = ({ workspaceId }) => {
           >
             <Menu size={20} />
           </button>
+          
+          <div className="workspace-info">
+            <div className="workspace-switcher" onClick={toggleWorkspaceSwitcher} ref={workspaceSwitcherRef}>
+              <Building2 size={16} />
+              <span className="workspace-name">
+                {currentWorkspace?.name || 'Loading...'}
+              </span>
+              <ChevronDown size={14} className={`workspace-arrow ${showWorkspaceSwitcher ? 'rotated' : ''}`} />
+              
+              {showWorkspaceSwitcher && (
+                <div className="workspace-dropdown">
+                  <div className="workspace-dropdown-header">
+                    <span>Switch Workspace</span>
+                  </div>
+                  <div className="workspace-dropdown-list">
+                    {loadingWorkspaces ? (
+                      <div className="workspace-dropdown-item loading">
+                        <div className="spinner-small"></div>
+                        Loading...
+                      </div>
+                    ) : workspaces.length === 0 ? (
+                      <div className="workspace-dropdown-item disabled">
+                        No workspaces found
+                      </div>
+                    ) : (
+                      workspaces.map((workspace) => (
+                        <div
+                          key={workspace.id}
+                          className={`workspace-dropdown-item ${workspace.id === workspaceId ? 'active' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleWorkspaceSwitch(workspace);
+                          }}
+                        >
+                          <Building2 size={14} />
+                          <div className="workspace-item-info">
+                            <span className="workspace-item-name">{workspace.name}</span>
+                            <span className="workspace-item-stats">
+                              {workspace.doc_count || 0} files
+                            </span>
+                          </div>
+                          {workspace.id === workspaceId && (
+                            <div className="workspace-current-indicator">•</div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
           <h2>{currentThread?.title || 'Select a conversation'}</h2>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
             <button 

@@ -27,13 +27,19 @@ const Dashboard = () => {
     }
     
     try {
-      await createWorkspace({ 
-        name: newWorkspaceName,
-        description: `Workspace for ${newWorkspaceName}` 
+      const newWorkspace = await createWorkspace({ 
+        name: newWorkspaceName
       });
+      console.log('Created workspace:', newWorkspace);
       setNewWorkspaceName('');
       setShowCreateForm(false);
+      
+      // Navigate to the new workspace
+      if (newWorkspace && newWorkspace.id) {
+        navigate(`/workspace/${newWorkspace.id}`);
+      }
     } catch (err) {
+      console.error('Error creating workspace:', err);
       // Error is handled in context
     }
   };
@@ -113,7 +119,7 @@ const Dashboard = () => {
                       <div className="workspace-icon">
                         <FileText size={24} />
                       </div>
-                      <h3>{workspace.name}</h3>
+                      <h3>{workspace.name || 'Unnamed Workspace'}</h3>
                       <p>{workspace.description || 'No description'}</p>
                       <div className="workspace-stats">
                         <span>
@@ -122,7 +128,7 @@ const Dashboard = () => {
                         </span>
                         <span>
                           <FileText size={16} />
-                          {workspace.file_count || 0} files
+                          {workspace.doc_count || workspace.file_count || 0} files
                         </span>
                       </div>
                     </div>
