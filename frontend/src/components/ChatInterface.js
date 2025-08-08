@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { threadService, messageService, fileService } from '../services/apiService';
-import { Send, Plus, MessageSquare, User, Bot, Upload, FileText, X, Menu, Paperclip } from 'lucide-react';
+import { threadService, messageService, fileService, workspaceService } from '../services/apiService';
+import { Send, Plus, MessageSquare, User, Bot, Upload, FileText, X, Menu, Paperclip, ChevronRight, ExternalLink, Trash2, AlertTriangle, ChevronDown, Building2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ChatInterface = ({ workspaceId }) => {
   const [threads, setThreads] = useState([]);
@@ -11,15 +12,41 @@ const ChatInterface = ({ workspaceId }) => {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [referencesOpen, setReferencesOpen] = useState(true);
+  const [currentReferences, setCurrentReferences] = useState({});
   const [files, setFiles] = useState([]);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deletingFile, setDeletingFile] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [workspaces, setWorkspaces] = useState([]);
+  const [currentWorkspace, setCurrentWorkspace] = useState(null);
+  const [showWorkspaceSwitcher, setShowWorkspaceSwitcher] = useState(false);
+  const [loadingWorkspaces, setLoadingWorkspaces] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const workspaceSwitcherRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Close workspace switcher when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (workspaceSwitcherRef.current && !workspaceSwitcherRef.current.contains(event.target)) {
+        setShowWorkspaceSwitcher(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     fetchThreads();
     fetchFiles();
+    fetchWorkspaces();
+    fetchCurrentWorkspace();
   }, [workspaceId]);
 
   useEffect(() => {
@@ -32,6 +59,64 @@ const ChatInterface = ({ workspaceId }) => {
     scrollToBottom();
   }, [messages]);
 
+  // Function to extract references from assistant messages
+  const extractReferencesFromMessages = (messages) => {
+    const latestReferences = {};
+    
+    messages.forEach(message => {
+      if (message.role === 'assistant' && message.content.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(message.content);
+          if (parsed.references) {
+            Object.assign(latestReferences, parsed.references);
+          }
+        } catch (e) {
+          // Ignore parsing errors
+        }
+      }
+    });
+    
+    return latestReferences;
+  };
+
+  // Update references when messages change
+  useEffect(() => {
+    const references = extractReferencesFromMessages(messages);
+    setCurrentReferences(references);
+  }, [messages]);
+
+  // Helper function to clean RAG context from user messages
+  const cleanMessageContent = (content, role) => {
+    if (role !== 'user') {
+      // For assistant messages, parse JSON response and extract clean text
+      if (role === 'assistant' && content.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(content);
+          if (parsed.response) {
+            // Return clean response without reference tags
+            return parsed.response.replace(/<ref id='[^']*'>/g, '').replace(/<\/ref>/g, '');
+          }
+        } catch (e) {
+          console.warn('Failed to parse AI response JSON:', e);
+        }
+      }
+      return content;
+    }
+    
+    // For user messages, remove RAG context
+    const ragContextRegex = /<RAG_CONTEXT>[\s\S]*?<\/RAG_CONTEXT>/gi;
+    const cleanContent = content.replace(ragContextRegex, '');
+    
+    // Extract the actual user message after "User:" prefix
+    const userMatch = cleanContent.match(/User:\s*(.+)$/);
+    if (userMatch) {
+      return userMatch[1].trim();
+    }
+    
+    // Fallback: return content without RAG context
+    return cleanContent.replace(/^\s*\n+/, '').trim();
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -39,9 +124,37 @@ const ChatInterface = ({ workspaceId }) => {
   const fetchFiles = async () => {
     try {
       const response = await fileService.getFiles(workspaceId);
-      setFiles(response);
+      setFiles(response.files || []);
     } catch (err) {
       console.error('Failed to fetch files:', err);
+      setFiles([]);
+    }
+  };
+
+  const fetchWorkspaces = async () => {
+    if (loadingWorkspaces) return;
+    
+    setLoadingWorkspaces(true);
+    try {
+      const workspaces = await workspaceService.getWorkspaces();
+      setWorkspaces(Array.isArray(workspaces) ? workspaces : []);
+    } catch (err) {
+      console.error('Failed to fetch workspaces:', err);
+      setWorkspaces([]);
+    } finally {
+      setLoadingWorkspaces(false);
+    }
+  };
+
+  const fetchCurrentWorkspace = async () => {
+    if (!workspaceId) return;
+    
+    try {
+      const workspace = await workspaceService.getWorkspace(workspaceId);
+      setCurrentWorkspace(workspace);
+    } catch (err) {
+      console.error('Failed to fetch current workspace:', err);
+      setCurrentWorkspace(null);
     }
   };
 
@@ -49,8 +162,9 @@ const ChatInterface = ({ workspaceId }) => {
     setLoading(true);
     try {
       const response = await threadService.getThreads();
+      const threads_data = response.threads || response;
       // Filter threads by workspace if the API supports it
-      const workspaceThreads = response.filter(thread => 
+      const workspaceThreads = threads_data.filter(thread => 
         thread.workspace_id === workspaceId
       );
       setThreads(workspaceThreads);
@@ -71,7 +185,8 @@ const ChatInterface = ({ workspaceId }) => {
   const fetchMessages = async (threadId) => {
     try {
       const response = await messageService.getMessages(threadId);
-      setMessages(response);
+      const messages_data = response.messages || response;
+      setMessages(messages_data);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch messages');
@@ -80,17 +195,22 @@ const ChatInterface = ({ workspaceId }) => {
 
   const createNewThread = async () => {
     try {
-      const newThread = await threadService.createThread({
+      const response = await threadService.createThread({
         workspace_id: workspaceId,
         title: `New Chat - ${new Date().toLocaleString()}`,
         description: 'Q&A session about uploaded files'
       });
+      
+      // Backend returns {thread: {...}}, so we need response.thread
+      const newThread = response.thread;
+      console.log('New thread created:', newThread);
       
       setThreads([newThread, ...threads]);
       setCurrentThread(newThread);
       setMessages([]);
       setError(null);
     } catch (err) {
+      console.error('Failed to create thread:', err);
       setError(err.response?.data?.message || 'Failed to create thread');
     }
   };
@@ -158,6 +278,43 @@ const ChatInterface = ({ workspaceId }) => {
     fileInputRef.current?.click();
   };
 
+  const handleDeleteFile = async (fileId, fileName) => {
+    setDeletingFile(fileId);
+    try {
+      await fileService.deleteFile(fileId);
+      await fetchFiles(); // Refresh the file list
+      setError(null);
+      setShowDeleteConfirm(null);
+    } catch (err) {
+      setError(err.response?.data?.message || `Failed to delete ${fileName}`);
+    } finally {
+      setDeletingFile(null);
+    }
+  };
+
+  const confirmDelete = (file) => {
+    setShowDeleteConfirm(file);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(null);
+  };
+
+  const handleWorkspaceSwitch = (workspace) => {
+    setShowWorkspaceSwitcher(false);
+    if (workspace.id !== workspaceId) {
+      // Navigate to the new workspace
+      navigate(`/workspace/${workspace.id}`);
+    }
+  };
+
+  const toggleWorkspaceSwitcher = () => {
+    setShowWorkspaceSwitcher(!showWorkspaceSwitcher);
+    if (!showWorkspaceSwitcher && workspaces.length === 0) {
+      fetchWorkspaces();
+    }
+  };
+
   const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -198,25 +355,42 @@ const ChatInterface = ({ workspaceId }) => {
         <div className="sidebar-footer">
           <div className="files-section">
             <div className="files-header">
-              <h4>Knowledge Base ({files.length})</h4>
+              <h4>Knowledge Base ({Array.isArray(files) ? files.length : 0})</h4>
               <button onClick={triggerFileUpload} className="upload-btn" disabled={uploading}>
                 <Upload size={14} />
                 {uploading ? 'Uploading...' : 'Upload'}
               </button>
             </div>
             <div className="files-list">
-              {files.slice(0, 5).map((file) => (
+              {Array.isArray(files) && files.slice(0, 5).map((file) => (
                 <div key={file.id} className="file-item">
-                  <FileText size={14} />
+                  <div className="file-icon">
+                    <FileText size={14} />
+                  </div>
                   <div className="file-info">
-                    <span className="file-name">{file.filename}</span>
+                    <span className="file-name" title={file.filename}>{file.filename}</span>
                     <span className="file-size">{formatFileSize(file.size)}</span>
+                  </div>
+                  <div className="file-actions">
+                    <button
+                      onClick={() => confirmDelete(file)}
+                      className="delete-file-btn"
+                      disabled={deletingFile === file.id}
+                      title={`Delete ${file.filename}`}
+                    >
+                      {deletingFile === file.id ? (
+                        <div className="spinner-small"></div>
+                      ) : (
+                        <Trash2 size={12} />
+                      )}
+                    </button>
                   </div>
                 </div>
               ))}
-              {files.length > 5 && (
+              {Array.isArray(files) && files.length > 5 && (
                 <div className="file-item more-files">
                   <span>+{files.length - 5} more files</span>
+                  <button className="view-all-btn">View All</button>
                 </div>
               )}
             </div>
@@ -233,7 +407,69 @@ const ChatInterface = ({ workspaceId }) => {
           >
             <Menu size={20} />
           </button>
+          
+          <div className="workspace-info">
+            <div className="workspace-switcher" onClick={toggleWorkspaceSwitcher} ref={workspaceSwitcherRef}>
+              <Building2 size={16} />
+              <span className="workspace-name">
+                {currentWorkspace?.name || 'Loading...'}
+              </span>
+              <ChevronDown size={14} className={`workspace-arrow ${showWorkspaceSwitcher ? 'rotated' : ''}`} />
+              
+              {showWorkspaceSwitcher && (
+                <div className="workspace-dropdown">
+                  <div className="workspace-dropdown-header">
+                    <span>Switch Workspace</span>
+                  </div>
+                  <div className="workspace-dropdown-list">
+                    {loadingWorkspaces ? (
+                      <div className="workspace-dropdown-item loading">
+                        <div className="spinner-small"></div>
+                        Loading...
+                      </div>
+                    ) : workspaces.length === 0 ? (
+                      <div className="workspace-dropdown-item disabled">
+                        No workspaces found
+                      </div>
+                    ) : (
+                      workspaces.map((workspace) => (
+                        <div
+                          key={workspace.id}
+                          className={`workspace-dropdown-item ${workspace.id === workspaceId ? 'active' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleWorkspaceSwitch(workspace);
+                          }}
+                        >
+                          <Building2 size={14} />
+                          <div className="workspace-item-info">
+                            <span className="workspace-item-name">{workspace.name}</span>
+                            <span className="workspace-item-stats">
+                              {workspace.doc_count || 0} files
+                            </span>
+                          </div>
+                          {workspace.id === workspaceId && (
+                            <div className="workspace-current-indicator">•</div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
           <h2>{currentThread?.title || 'Select a conversation'}</h2>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={() => setReferencesOpen(!referencesOpen)}
+              className="sidebar-toggle"
+              title="Toggle References Panel"
+            >
+              <FileText size={18} />
+            </button>
+          </div>
         </div>
 
         <div className="chat-container">
@@ -270,7 +506,9 @@ const ChatInterface = ({ workspaceId }) => {
                         )}
                       </div>
                       <div className="message-content">
-                        <div className="message-text">{message.content}</div>
+                        <div className="message-text">
+                          {cleanMessageContent(message.content, message.role)}
+                        </div>
                         <div className="message-time">
                           {formatTime(message.created_at)}
                         </div>
@@ -321,12 +559,62 @@ const ChatInterface = ({ workspaceId }) => {
         </div>
       </div>
 
+      {/* References Panel */}
+      <div className={`references-panel ${referencesOpen ? '' : 'hidden'}`}>
+        <div className="references-header">
+          <h3>References</h3>
+          <button 
+            onClick={() => setReferencesOpen(!referencesOpen)}
+            className="references-toggle"
+          >
+            <ChevronRight size={16} style={{ transform: referencesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+          </button>
+        </div>
+        
+        <div className="references-content">
+          {Object.keys(currentReferences).length === 0 ? (
+            <div className="references-empty">
+              <FileText size={32} />
+              <h4>No References Yet</h4>
+              <p>References will appear here when the AI uses information from your documents to answer questions.</p>
+            </div>
+          ) : (
+            <div className="references-list">
+              <div className="references-info">
+                <span>{Object.keys(currentReferences).length} reference{Object.keys(currentReferences).length !== 1 ? 's' : ''} found</span>
+              </div>
+              {Object.entries(currentReferences).map(([id, ref]) => (
+                <div key={id} className="reference-item">
+                  <div className="reference-header">
+                    <div className="reference-title">
+                      <FileText size={16} />
+                      <span className="reference-filename">{ref.title || id}</span>
+                    </div>
+                    <ExternalLink size={12} className="reference-external" />
+                  </div>
+                  <div className="reference-content">
+                    <div className="reference-text">
+                      "{ref.text}"
+                    </div>
+                    {ref.line && (
+                      <div className="reference-metadata">
+                        <span className="reference-location">Line {ref.line}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
         onChange={handleFileUpload}
-        accept=".txt,.md,.pdf,.doc,.docx"
+        accept=".txt,.csv,.docx"
         style={{ display: 'none' }}
       />
 
@@ -336,6 +624,44 @@ const ChatInterface = ({ workspaceId }) => {
           <button onClick={() => setError(null)}>
             <X size={16} />
           </button>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay">
+          <div className="delete-modal">
+            <div className="modal-header">
+              <AlertTriangle size={24} className="warning-icon" />
+              <h3>Delete File</h3>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete <strong>"{showDeleteConfirm.filename}"</strong>?</p>
+              <p className="warning-text">This action cannot be undone. The file will be permanently removed from your knowledge base.</p>
+            </div>
+            <div className="modal-actions">
+              <button onClick={cancelDelete} className="cancel-btn">
+                Cancel
+              </button>
+              <button 
+                onClick={() => handleDeleteFile(showDeleteConfirm.id, showDeleteConfirm.filename)} 
+                className="delete-btn"
+                disabled={deletingFile === showDeleteConfirm.id}
+              >
+                {deletingFile === showDeleteConfirm.id ? (
+                  <>
+                    <div className="spinner-small"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

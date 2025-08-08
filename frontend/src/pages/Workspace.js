@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAuth } from '../context/AuthContext';
@@ -12,9 +12,12 @@ const Workspace = () => {
   const { currentWorkspace, setCurrentWorkspace, loading, error } = useWorkspace();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const lastFetchedIdRef = useRef(null);
 
   useEffect(() => {
-    if (workspaceId && isAuthenticated) {
+    if (workspaceId && isAuthenticated && lastFetchedIdRef.current !== workspaceId) {
+      console.log('Fetching workspace:', workspaceId);
+      lastFetchedIdRef.current = workspaceId;
       setCurrentWorkspace(workspaceId);
     }
   }, [workspaceId, setCurrentWorkspace, isAuthenticated]);

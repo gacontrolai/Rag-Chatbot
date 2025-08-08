@@ -17,14 +17,19 @@ def upload_file(workspace_id):
     """Upload a file to workspace with content extraction and embedding"""
     try:
         current_user_id = get_jwt_identity()
+        print(f"Upload request from user {current_user_id} for workspace {workspace_id}")
         
         # Check if file is in request
         if 'file' not in request.files:
+            print("Error: No file provided in request")
             return {'error': {'code': 'VALIDATION_ERROR', 'message': 'No file provided'}}, 400
         
         file = request.files['file']
         if file.filename == '':
+            print("Error: No file selected")
             return {'error': {'code': 'VALIDATION_ERROR', 'message': 'No file selected'}}, 400
+        
+        print(f"File uploaded: {file.filename}")
         
         # Get optional file metadata from form data
         file_data = None

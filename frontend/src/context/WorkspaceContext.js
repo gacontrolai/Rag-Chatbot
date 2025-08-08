@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useCallback } from 'react';
 import { workspaceService } from '../services/apiService';
 
 // Initial state
@@ -72,53 +72,76 @@ export const WorkspaceProvider = ({ children }) => {
   const [state, dispatch] = useReducer(workspaceReducer, initialState);
 
   // Fetch workspaces
-  const fetchWorkspaces = async () => {
+  const fetchWorkspaces = useCallback(async () => {
     dispatch({ type: WORKSPACE_ACTIONS.SET_LOADING, payload: true });
     try {
+      console.log('Fetching workspaces...');
       const workspaces = await workspaceService.getWorkspaces();
-      dispatch({ type: WORKSPACE_ACTIONS.SET_WORKSPACES, payload: workspaces });
+      console.log('Workspaces response:', workspaces);
+      // Ensure workspaces is always an array
+      const workspacesArray = Array.isArray(workspaces) ? workspaces : [];
+      console.log('Setting workspaces:', workspacesArray);
+      dispatch({ type: WORKSPACE_ACTIONS.SET_WORKSPACES, payload: workspacesArray });
     } catch (error) {
+      console.error('Error fetching workspaces:', error);
       dispatch({ 
         type: WORKSPACE_ACTIONS.SET_ERROR, 
-        payload: error.response?.data?.message || 'Failed to fetch workspaces' 
+        payload: error.response?.data?.error?.message || error.response?.data?.message || 'Failed to fetch workspaces' 
       });
     }
-  };
+  }, []);
 
   // Create workspace
-  const createWorkspace = async (workspaceData) => {
+  const createWorkspace = useCallback(async (workspaceData) => {
     dispatch({ type: WORKSPACE_ACTIONS.SET_LOADING, payload: true });
     try {
+      console.log('Creating workspace with data:', workspaceData);
       const newWorkspace = await workspaceService.createWorkspace(workspaceData);
+      console.log('Created workspace response:', newWorkspace);
+      
+      if (!newWorkspace || !newWorkspace.id) {
+        throw new Error('Invalid workspace response - missing ID');
+      }
+      
       dispatch({ type: WORKSPACE_ACTIONS.ADD_WORKSPACE, payload: newWorkspace });
+      // Refresh the workspace list to ensure consistency
+      await fetchWorkspaces();
       return newWorkspace;
     } catch (error) {
+      console.error('Error creating workspace:', error);
+      const errorMessage = error.response?.data?.error?.message || 
+                          error.response?.data?.message || 
+                          error.message ||
+                          'Failed to create workspace';
       dispatch({ 
         type: WORKSPACE_ACTIONS.SET_ERROR, 
-        payload: error.response?.data?.message || 'Failed to create workspace' 
+        payload: errorMessage
       });
       throw error;
     }
-  };
+  }, [fetchWorkspaces]);
 
   // Set current workspace
-  const setCurrentWorkspace = async (workspaceId) => {
+  const setCurrentWorkspace = useCallback(async (workspaceId) => {
     dispatch({ type: WORKSPACE_ACTIONS.SET_LOADING, payload: true });
     try {
+      console.log('Fetching workspace details for ID:', workspaceId);
       const workspace = await workspaceService.getWorkspace(workspaceId);
+      console.log('Workspace details:', workspace);
       dispatch({ type: WORKSPACE_ACTIONS.SET_CURRENT_WORKSPACE, payload: workspace });
     } catch (error) {
+      console.error('Error fetching workspace:', error);
       dispatch({ 
         type: WORKSPACE_ACTIONS.SET_ERROR, 
-        payload: error.response?.data?.message || 'Failed to fetch workspace' 
+        payload: error.response?.data?.error?.message || error.response?.data?.message || 'Failed to fetch workspace' 
       });
     }
-  };
+  }, []);
 
   // Clear error
-  const clearError = () => {
+  const clearError = useCallback(() => {
     dispatch({ type: WORKSPACE_ACTIONS.CLEAR_ERROR });
-  };
+  }, []);
 
   const value = {
     ...state,
