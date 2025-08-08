@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Send, Bot, User, X, Paperclip, LogIn, UserPlus, Sparkles, FileText, Search, Building2 } from 'lucide-react';
+import { Send, Bot, User, X, Paperclip, LogIn, UserPlus, Sparkles, FileText, Search, Building2, Brain, MoreHorizontal } from 'lucide-react';
 import Header from '../components/Header';
 
 const PublicChat = () => {
@@ -11,8 +11,15 @@ const PublicChat = () => {
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, loading, navigate]);
 
   useEffect(() => {
     scrollToBottom();
@@ -93,6 +100,15 @@ const PublicChat = () => {
   const handleSignUp = () => {
     navigate('/register');
   };
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner">Checking authentication...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="public-chat">
@@ -201,8 +217,8 @@ const PublicChat = () => {
                             <User size={16} />
                           </div>
                         ) : (
-                          <div className="bot-avatar">
-                            <Bot size={16} />
+                          <div className="bot-avatar professional">
+                            <Brain size={16} />
                           </div>
                         )}
                       </div>
@@ -217,15 +233,18 @@ const PublicChat = () => {
                   {sending && (
                     <div className="message-wrapper assistant">
                       <div className="message-avatar">
-                        <div className="bot-avatar">
-                          <Bot size={16} />
+                        <div className="bot-avatar professional">
+                          <Brain size={16} />
                         </div>
                       </div>
                       <div className="message-content">
                         <div className="typing-indicator">
-                          <span></span>
-                          <span></span>
-                          <span></span>
+                          <div className="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </div>
+                          <div className="typing-text">AI is thinking...</div>
                         </div>
                       </div>
                     </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { threadService, messageService, fileService, workspaceService } from '../services/apiService';
-import { Send, Plus, MessageSquare, User, Bot, Upload, FileText, X, Menu, Paperclip, ChevronRight, ExternalLink, Trash2, AlertTriangle, ChevronDown, Building2 } from 'lucide-react';
+import { Send, Plus, MessageSquare, User, Bot, Upload, FileText, X, Menu, Paperclip, ChevronRight, ExternalLink, Trash2, AlertTriangle, ChevronDown, Building2, Brain, MoreHorizontal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ChatInterface = ({ workspaceId }) => {
@@ -500,8 +500,8 @@ const ChatInterface = ({ workspaceId }) => {
                             <User size={16} />
                           </div>
                         ) : (
-                          <div className="bot-avatar">
-                            <Bot size={16} />
+                          <div className="bot-avatar professional">
+                            <Brain size={16} />
                           </div>
                         )}
                       </div>
@@ -515,6 +515,25 @@ const ChatInterface = ({ workspaceId }) => {
                       </div>
                     </div>
                   ))}
+                  {sending && (
+                    <div className="message-wrapper assistant">
+                      <div className="message-avatar">
+                        <div className="bot-avatar professional">
+                          <Brain size={16} />
+                        </div>
+                      </div>
+                      <div className="message-content">
+                        <div className="typing-indicator">
+                          <div className="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </div>
+                          <div className="typing-text">AI is thinking...</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
               )}

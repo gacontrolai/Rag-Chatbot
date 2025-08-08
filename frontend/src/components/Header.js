@@ -43,13 +43,15 @@ const Header = () => {
           </div>
           
           <nav className="nav-links">
-            <button 
-              onClick={() => navigate('/')} 
-              className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
-            >
-              <Home size={16} />
-              <span>Chat</span>
-            </button>
+            {!isAuthenticated && (
+              <button 
+                onClick={() => navigate('/')} 
+                className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
+              >
+                <Home size={16} />
+                <span>Chat</span>
+              </button>
+            )}
             
             {isAuthenticated && (
               <button 

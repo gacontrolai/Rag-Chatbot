@@ -85,42 +85,23 @@ export const AuthProvider = ({ children }) => {
   // Check for existing token on app load
   useEffect(() => {
     const checkAuth = async () => {
-      // For demo purposes, skip API calls if API_BASE_URL is localhost:5000 and server is not running
-      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+      const token = localStorage.getItem('accessToken');
+      console.log('Checking auth on load, token exists:', !!token);
       
-      if (apiBaseUrl.includes('localhost:5000')) {
-        // In demo mode, just check for tokens but don't validate with server
-        const token = localStorage.getItem('accessToken');
-        if (token) {
-          try {
-            const user = await authService.getCurrentUser();
-            dispatch({ type: AUTH_ACTIONS.SET_USER, payload: user });
-          } catch (error) {
-            console.warn('API server not available, running in demo mode');
-            // Clear tokens if server is not available
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
-          }
-        } else {
-          dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
+      if (token) {
+        try {
+          const user = await authService.getCurrentUser();
+          console.log('Successfully got current user:', user);
+          dispatch({ type: AUTH_ACTIONS.SET_USER, payload: user });
+        } catch (error) {
+          console.warn('Failed to get current user, clearing tokens:', error.message);
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          dispatch({ type: AUTH_ACTIONS.SET_USER, payload: null });
         }
       } else {
-        // Production mode - validate with server
-        const token = localStorage.getItem('accessToken');
-        if (token) {
-          try {
-            const user = await authService.getCurrentUser();
-            dispatch({ type: AUTH_ACTIONS.SET_USER, payload: user });
-          } catch (error) {
-            console.warn('Failed to get current user, clearing tokens:', error.message);
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            dispatch({ type: AUTH_ACTIONS.SET_USER, payload: null });
-          }
-        } else {
-          dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
-        }
+        console.log('No token found, setting loading to false');
+        dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
       }
     };
 
@@ -131,14 +112,20 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     dispatch({ type: AUTH_ACTIONS.LOGIN_START });
     try {
+      console.log('Attempting login for:', credentials.email);
       const response = await authService.login(credentials);
+      console.log('Login response received:', response);
+      
       const user = await authService.getCurrentUser();
+      console.log('Current user fetched after login:', user);
+      
       dispatch({ 
         type: AUTH_ACTIONS.LOGIN_SUCCESS, 
         payload: { user, ...response } 
       });
       return response;
     } catch (error) {
+      console.error('Login failed:', error);
       dispatch({ 
         type: AUTH_ACTIONS.LOGIN_FAILURE, 
         payload: error.response?.data?.message || 'Login failed' 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
@@ -8,8 +8,15 @@ const Login = () => {
     email: '',
     password: '',
   });
-  const { login, loading, error, clearError } = useAuth();
+  const { login, loading, error, clearError, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -23,7 +30,7 @@ const Login = () => {
     e.preventDefault();
     try {
       await login(formData);
-      navigate('/dashboard');
+      // Navigation will be handled by the useEffect hook when isAuthenticated becomes true
     } catch (err) {
       // Error is handled in context
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
@@ -10,9 +10,16 @@ const Register = () => {
     password: '',
     confirmPassword: '',
   });
-  const [validationError, setValidationError] = useState('');
-  const { register, loading, error, clearError } = useAuth();
+  const [localError, setLocalError] = useState('');
+  const { register, loading, error, clearError, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -20,26 +27,26 @@ const Register = () => {
       [e.target.name]: e.target.value,
     });
     if (error) clearError();
-    if (validationError) setValidationError('');
+    if (localError) setLocalError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      setValidationError('Passwords do not match');
+      setLocalError('Passwords do not match');
       return;
     }
 
     if (formData.password.length < 6) {
-      setValidationError('Password must be at least 6 characters long');
+      setLocalError('Password must be at least 6 characters long');
       return;
     }
 
     try {
       const { confirmPassword, ...registrationData } = formData;
       await register(registrationData);
-      navigate('/dashboard');
+      // Navigation will be handled by the useEffect hook when isAuthenticated becomes true
     } catch (err) {
       // Error is handled in context
     }
@@ -57,8 +64,8 @@ const Register = () => {
         </div>
         
         <form onSubmit={handleSubmit} className="auth-form">
-          {(error || validationError) && (
-            <div className="error-message">{error || validationError}</div>
+          {(error || localError) && (
+            <div className="error-message">{error || localError}</div>
           )}
           
           <div className="form-group">
