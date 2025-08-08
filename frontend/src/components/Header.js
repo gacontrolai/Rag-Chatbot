@@ -30,7 +30,7 @@ const Header = () => {
   return (
     <header className="app-header">
       <div className="header-container">
-        <div className="header-left">
+        <div className="header-center">
           <div className="logo" onClick={() => navigate('/')}>
             <div className="logo-icon">
               <Brain size={28} />
@@ -54,19 +54,28 @@ const Header = () => {
             )}
             
             {isAuthenticated && (
-              <button 
-                onClick={() => navigate('/dashboard')} 
-                className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}
-              >
-                <Briefcase size={16} />
-                <span>Dashboard</span>
-              </button>
+              <>
+                <button 
+                  onClick={() => navigate('/')} 
+                  className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
+                >
+                  <Home size={16} />
+                  <span>Chat</span>
+                </button>
+                <button 
+                  onClick={() => navigate('/dashboard')} 
+                  className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}
+                >
+                  <Briefcase size={16} />
+                  <span>Workspace</span>
+                </button>
+              </>
             )}
           </nav>
         </div>
 
         <div className="header-right">
-          {isAuthenticated ? (
+          {isAuthenticated && (
             <div className="user-menu-container">
               <button onClick={toggleUserMenu} className="user-avatar">
                 <div className="user-avatar-circle">
@@ -91,15 +100,6 @@ const Header = () => {
                   </button>
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="auth-buttons">
-              <button onClick={handleLogin} className="btn-outline">
-                Log in
-              </button>
-              <button onClick={handleRegister} className="btn-primary">
-                Sign up
-              </button>
             </div>
           )}
         </div>

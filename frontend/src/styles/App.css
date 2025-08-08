@@ -106,6 +106,13 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
 }
 
 /* Logo styles */
@@ -175,7 +182,6 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-left: var(--space-8);
 }
 
 .nav-link {
@@ -2076,6 +2082,7 @@ body {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  height: calc(100vh - 72px); /* Subtract header height from viewport height */
 }
 
 .info-sidebar {
@@ -2587,6 +2594,7 @@ body {
     flex-direction: column;
     padding: var(--space-4);
     gap: var(--space-4);
+    height: calc(100vh - 72px); /* Subtract header height from viewport height */
   }
   
   .info-sidebar {
