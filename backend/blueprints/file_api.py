@@ -205,4 +205,27 @@ def get_supported_formats(workspace_id):
                 'code': 'INTERNAL_ERROR',
                 'message': 'An error occurred while fetching supported formats'
             }
+        }, 500
+
+@file_bp.route('/vector-store/stats', methods=['GET'])
+@jwt_required()
+def get_vector_store_stats():
+    """Get vector store statistics and configuration"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Get vector store statistics
+        stats = file_service.get_vector_stats()
+        
+        return {
+            'vector_store_stats': stats,
+            'message': 'Vector store statistics retrieved successfully'
+        }, 200
+        
+    except Exception as e:
+        return {
+            'error': {
+                'code': 'INTERNAL_ERROR',
+                'message': f'An error occurred while fetching vector store stats: {str(e)}'
+            }
         }, 500 

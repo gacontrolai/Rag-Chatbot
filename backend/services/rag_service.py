@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional
 from repositories.file_repo import FileRepository
 from services.embedding_service import EmbeddingService
+from services.vector_service import VectorService
 
 class RAGService:
     """Service for Retrieval Augmented Generation (RAG) pipeline"""
@@ -8,6 +9,7 @@ class RAGService:
     def __init__(self):
         self.file_repo = FileRepository()
         self.embedding_service = EmbeddingService()
+        self.vector_service = VectorService()
     
     def search_context(self, workspace_id: str, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """
@@ -35,15 +37,9 @@ class RAGService:
             if not query_embedding:
                 return self._text_search(workspace_id, query, top_k)
             
-            # Get all file chunks with embeddings from workspace
-            file_chunks = self.file_repo.get_chunks_with_embeddings(workspace_id)
-            
-            if not file_chunks:
-                return []
-            
-            # Find most similar chunks
-            similar_chunks = self.embedding_service.find_most_similar(
-                query_embedding, file_chunks, top_k
+            # Use vector service for search
+            similar_chunks = self.vector_service.search_similar(
+                query_embedding, workspace_id, top_k
             )
             
             # Format results for RAG context
@@ -108,11 +104,17 @@ class RAGService:
     
     def get_embedding_stats(self) -> Dict[str, Any]:
         """Get embedding service statistics"""
-        return {
+        embedding_stats = {
             'embedding_service_available': self.embedding_service.is_available(),
             'embedding_dimension': self.embedding_service.get_embedding_dimension() if self.embedding_service.is_available() else 0,
             'model_type': 'openai' if self.embedding_service.openai_embeddings else 'local' if self.embedding_service.local_model else 'none'
         }
+        
+        # Add vector service stats
+        vector_stats = self.vector_service.get_stats()
+        embedding_stats.update(vector_stats)
+        
+        return embedding_stats
     
     def calculate_similarity(self, text1: str, text2: str) -> float:
         """Calculate similarity between two texts"""

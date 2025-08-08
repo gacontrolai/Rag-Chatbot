@@ -6,13 +6,15 @@ from models.file import FileResponse, FileUpload, FileStatus
 from extensions.storage import storage_manager
 from utils.exceptions import ValidationError, PermissionError
 from utils.content_extractor import ContentExtractor
-from services.embedding_service import EmbeddingService 
+from services.embedding_service import EmbeddingService
+from services.vector_service import VectorService
 
 class FileService:
     def __init__(self):
         self.file_repo = FileRepository()
         self.workspace_repo = WorkspaceRepository()
         self.embedding_service = EmbeddingService()
+        self.vector_service = VectorService()
     
     def upload_file(self, workspace_id: str, user_id: str, file: FileStorage, 
                    file_data: Optional[FileUpload] = None) -> FileResponse:
@@ -84,12 +86,20 @@ class FileService:
                             'embedding': embedding,
                             'start_pos': chunk['start_pos'],
                             'end_pos': chunk['end_pos'],
-                            'char_count': chunk['char_count']
+                            'char_count': chunk['char_count'],
+                            'filename': file.filename
                         })
                 
-                # Add text chunks to file record
+                # Store embeddings using vector service
                 if text_chunks:
-                    self.file_repo.add_text_chunks(file_id, text_chunks)
+                    vector_success = self.vector_service.store_embeddings(
+                        workspace_id, file_id, text_chunks
+                    )
+                    
+                    if not vector_success:
+                        print(f"Warning: Failed to store embeddings in vector store for file {file.filename}")
+                        # Still continue with MongoDB storage as fallback
+                        self.file_repo.add_text_chunks(file_id, text_chunks)
                 
                 # Update file status to ready
                 self.file_repo.update_status(file_id, FileStatus.READY)
@@ -148,12 +158,9 @@ class FileService:
             if not query_embedding:
                 return self._basic_text_search(workspace_id, query, top_k)
             
-            # Get all file chunks with embeddings
-            file_chunks = self.file_repo.get_chunks_with_embeddings(workspace_id)
-            
-            # Find most similar chunks
-            similar_chunks = self.embedding_service.find_most_similar(
-                query_embedding, file_chunks, top_k
+            # Use vector service for search
+            similar_chunks = self.vector_service.search_similar(
+                query_embedding, workspace_id, top_k
             )
             
             return similar_chunks
@@ -232,18 +239,32 @@ class FileService:
             if not workspace or workspace['owner_id'] != user_id:
                 raise PermissionError("Permission denied")
         
-        # Delete from storage
-        storage_manager.delete_file(file_doc['storage_url'])
-        
-        # Delete from database
-        success = self.file_repo.delete_file(file_id)
-        
-        if success:
-            # Update workspace counters
-            self.workspace_repo.increment_file_counters(
-                file_doc['workspace_id'],
-                doc_count_delta=-1,
-                storage_delta=-file_doc['size']
+        try:
+            # Delete embeddings from vector store
+            self.vector_service.delete_embeddings_by_file(
+                file_id, file_doc['workspace_id']
             )
-        
-        return success 
+            
+            # Delete from storage
+            storage_manager.delete_file(file_doc['storage_url'])
+            
+            # Delete from database
+            success = self.file_repo.delete_file(file_id)
+            
+            if success:
+                # Update workspace counters
+                self.workspace_repo.increment_file_counters(
+                    file_doc['workspace_id'],
+                    doc_count_delta=-1,
+                    storage_delta=-file_doc['size']
+                )
+            
+            return success
+            
+        except Exception as e:
+            print(f"Error deleting file: {e}")
+            return False
+    
+    def get_vector_stats(self) -> Dict[str, Any]:
+        """Get vector service statistics"""
+        return self.vector_service.get_stats() 

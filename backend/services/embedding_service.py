@@ -21,11 +21,12 @@ class EmbeddingService:
         self.embedding_model = os.getenv('EMBEDDING_MODEL', 'sentence-transformers')
         
         # Initialize embedding model based on configuration
-        if self.embedding_model == 'openai' and LANGCHAIN_AVAILABLE and os.getenv('OPENAI_API_KEY'):
+        if self.embedding_model == 'openai' and LANGCHAIN_AVAILABLE and os.getenv('OPENAI_EMBEDDING_KEY'):
             try:
                 self.openai_embeddings = OpenAIEmbeddings(
-                    openai_api_key=os.getenv('OPENAI_API_KEY'),
-                    model=os.getenv('OPENAI_EMBEDDING_MODEL', 'text-embedding-ada-002')
+                    openai_api_key=os.getenv('OPENAI_EMBEDDING_KEY'),
+                    base_url=os.getenv('OPENAI_BASE_URL'),
+                    model=os.getenv('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small')
                 )
                 print("OpenAI embeddings initialized successfully")
             except Exception as e:
@@ -38,7 +39,7 @@ class EmbeddingService:
         """Initialize local sentence-transformers model as fallback"""
         try:
             model_name = os.getenv('LOCAL_EMBEDDING_MODEL', 'all-MiniLM-L6-v2')
-            self.local_model = SentenceTransformer(model_name)
+            # self.local_model = SentenceTransformer(model_name)
             print(f"Local embedding model '{model_name}' initialized successfully")
         except Exception as e:
             print(f"Failed to initialize local embedding model: {e}")

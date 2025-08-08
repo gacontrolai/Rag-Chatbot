@@ -1,15 +1,17 @@
 # RAG Chatbot - Intelligent Document Q&A System
 
-A comprehensive full-stack chatbot application that combines **Retrieval Augmented Generation (RAG)** with advanced file processing capabilities. Upload documents, create workspaces, and have intelligent conversations about your content using OpenAI's GPT models.
+A comprehensive full-stack chatbot application that combines **Retrieval Augmented Generation (RAG)** with advanced file processing capabilities. Upload documents, create workspaces, and have intelligent conversations about your content using OpenAI's GPT models and **Pinecone vector database**.
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![React](https://img.shields.io/badge/react-18.2.0-blue)
+![Pinecone](https://img.shields.io/badge/pinecone-vector--db-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## 🚀 Features
 
 ### 🤖 **Intelligent RAG System**
+- **Pinecone Vector Database**: High-performance vector search with 1536-dimensional embeddings
 - **Semantic Search**: Vector-based similarity search with dual embedding models (OpenAI + Sentence Transformers)
 - **Multi-format Processing**: Support for `.txt`, `.csv`, `.docx` files with smart content extraction
 - **Advanced Chunking**: Optimal text segmentation with 1000-char chunks and 100-char overlap
@@ -40,6 +42,7 @@ A comprehensive full-stack chatbot application that combines **Retrieval Augment
 - **Node.js 16+**
 - **MongoDB** (local or Atlas)
 - **OpenAI API Key**
+- **Pinecone API Key** (for vector database)
 - **Redis** (optional, for rate limiting)
 
 ### 🔧 Installation
@@ -95,6 +98,12 @@ A comprehensive full-stack chatbot application that combines **Retrieval Augment
    OPENAI_EMBEDDING_MODEL=text-embedding-ada-002
    LOCAL_EMBEDDING_MODEL=all-MiniLM-L6-v2
    
+   # Pinecone Configuration (Primary Vector Database)
+   PINECONE_API_KEY=your-pinecone-api-key
+   PINECONE_ENVIRONMENT=us-east1-gcp
+   PINECONE_INDEX_NAME=rag-chatbot
+   VECTOR_STORE=pinecone  # 'pinecone' or 'mongodb'
+   
    # File Storage
    STORAGE_TYPE=local
    LOCAL_STORAGE_PATH=./uploads
@@ -135,10 +144,14 @@ Rag-Chatbot/
 │   ├── app.py              # Application factory
 │   ├── blueprints/         # API route handlers
 │   ├── services/           # Business logic layer
+│   │   ├── pinecone_service.py    # Pinecone vector operations
+│   │   ├── vector_service.py      # Unified vector store interface
+│   │   ├── embedding_service.py   # Dual embedding system
+│   │   └── file_service.py        # File processing pipeline
 │   ├── repositories/       # Data access layer
 │   ├── models/             # Pydantic data models
 │   ├── utils/              # Utility functions
-│   └── requirements.txt    # Python dependencies
+│   └── requirements.txt    # Python dependencies (includes pinecone-client)
 ├── frontend/               # React Client Application
 │   ├── src/
 │   │   ├── components/     # Reusable UI components
@@ -157,8 +170,8 @@ Rag-Chatbot/
 2. **Content Extraction** → Smart text extraction by file type
 3. **Text Chunking** → Optimal segmentation with overlap
 4. **Embedding Generation** → Vector representation (OpenAI/Local)
-5. **Storage** → MongoDB with vector search capability
-6. **RAG Processing** → Context-aware response generation
+5. **Pinecone Storage** → High-performance vector indexing with metadata
+6. **RAG Processing** → Context-aware response generation with similarity search
 
 ## 📚 API Documentation
 
@@ -186,12 +199,15 @@ POST /v1/auth/login
 POST /v1/workspaces/{workspace_id}/files
 Content-Type: multipart/form-data
 
-# Semantic search
+# Semantic search (powered by Pinecone)
 POST /v1/workspaces/{workspace_id}/files/search
 {
   "query": "project requirements",
   "top_k": 5
 }
+
+# Get vector store statistics
+GET /v1/vector-store/stats
 ```
 
 ### Chat & Messaging
@@ -233,11 +249,15 @@ curl -X POST http://localhost:5000/v1/workspaces/{workspace_id}/files \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -F "file=@test_document.txt"
 
-# Test semantic search
+# Test Pinecone-powered semantic search
 curl -X POST http://localhost:5000/v1/workspaces/{workspace_id}/files/search \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"query": "test query", "top_k": 3}'
+
+# Check vector store statistics
+curl -X GET http://localhost:5000/v1/vector-store/stats \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ## 🚀 Deployment
@@ -250,6 +270,8 @@ curl -X POST http://localhost:5000/v1/workspaces/{workspace_id}/files/search \
    SECRET_KEY=production-secret-key
    MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/
    OPENAI_API_KEY=production-openai-key
+   PINECONE_API_KEY=production-pinecone-key
+   PINECONE_ENVIRONMENT=production-environment
    ```
 
 2. **Backend Deployment**
@@ -275,6 +297,16 @@ docker-compose up --build
 
 ## 🔧 Configuration Options
 
+### Vector Database Options
+- **Pinecone (Primary)**: High-performance managed vector database
+  - **Dimensions**: 1536 (OpenAI embeddings) or 384 (local embeddings)
+  - **Metric**: Cosine similarity
+  - **Automatic scaling** and **high availability**
+  - **Metadata filtering** for workspace isolation
+- **MongoDB (Fallback)**: Local vector storage when Pinecone unavailable
+  - **Automatic fallback** if Pinecone initialization fails
+  - **Graceful degradation** for development environments
+
 ### Embedding Models
 - **OpenAI Embeddings**: High quality, requires API key, 1536 dimensions
 - **Local Embeddings**: Free, offline, 384 dimensions (all-MiniLM-L6-v2)
@@ -289,7 +321,27 @@ docker-compose up --build
 ### Storage Options
 - **Local Storage**: Files stored in local filesystem
 - **S3-Compatible**: AWS S3, MinIO, or other S3-compatible storage
-- **Database**: MongoDB for metadata and vector storage
+- **Database**: MongoDB for metadata and file records
+- **Vector Storage**: Pinecone for embeddings and similarity search
+
+## 🌟 Pinecone Integration Benefits
+
+### Performance Advantages
+- **Sub-second Search**: Optimized vector similarity search
+- **Horizontal Scaling**: Handles millions of vectors efficiently
+- **Real-time Updates**: Immediate availability of new embeddings
+- **High Availability**: Managed infrastructure with 99.9% uptime
+
+### Advanced Features
+- **Metadata Filtering**: Workspace-level data isolation
+- **Batch Operations**: Efficient bulk upserts and deletions
+- **Multiple Indexes**: Support for different embedding dimensions
+- **Analytics**: Built-in query performance metrics
+
+### Cost Optimization
+- **Pay-per-use**: Only pay for active vector storage and queries
+- **Automatic Scaling**: No need to provision capacity upfront
+- **Efficient Storage**: Compressed vector representations
 
 ## 🤝 Contributing
 
@@ -317,6 +369,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Common Issues
 - **CORS Errors**: Ensure backend allows frontend origin
 - **File Upload Fails**: Check file format and size limits
+- **Pinecone Connection**: Verify API key and environment settings
 - **Embedding Errors**: Verify OpenAI API key or fallback to local model
 - **MongoDB Connection**: Ensure MongoDB is running and accessible
 
@@ -327,6 +380,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
+- **Pinecone** for high-performance vector database
 - **OpenAI** for GPT models and embeddings
 - **LangChain** for RAG framework
 - **Sentence Transformers** for local embeddings

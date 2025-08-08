@@ -53,6 +53,11 @@ class Config:
     # Pagination
     DEFAULT_PAGE_SIZE = int(os.getenv('DEFAULT_PAGE_SIZE', 20))
     MAX_PAGE_SIZE = int(os.getenv('MAX_PAGE_SIZE', 100))
+    
+    # Pinecone Configuration
+    PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
+    PINECONE_ENVIRONMENT = os.getenv('PINECONE_ENVIRONMENT', 'us-east1-gcp')
+    PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME', 'rag-chatbot')
 
 class DevelopmentConfig(Config):
     DEBUG = True
