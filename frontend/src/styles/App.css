@@ -1077,11 +1077,11 @@ body {
 /* ChatGPT-like Interface with References Panel */
 .gpt-interface {
   display: flex;
-  height: calc(100vh - 72px); /* Account for header height */
+  height: calc(100vh - 80px); /* Reduced from 72px to 60px */
   width: 100vw;
   background: #ffffff;
   position: fixed;
-  top: 72px; /* Position below header */
+  top: 70px; /* Reduced from 72px to 60px - moves chatbox up */
   left: 0;
   right: 0;
   bottom: 0;
