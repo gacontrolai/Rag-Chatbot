@@ -85,10 +85,10 @@ export const AuthProvider = ({ children }) => {
   // Check for existing token on app load
   useEffect(() => {
     const checkAuth = async () => {
-      // For demo purposes, skip API calls if API_BASE_URL is localhost:8000 and server is not running
-      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+      // For demo purposes, skip API calls if API_BASE_URL is localhost:5000 and server is not running
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
       
-      if (apiBaseUrl.includes('localhost:8000')) {
+      if (apiBaseUrl.includes('localhost:5000')) {
         // In demo mode, just check for tokens but don't validate with server
         const token = localStorage.getItem('accessToken');
         if (token) {

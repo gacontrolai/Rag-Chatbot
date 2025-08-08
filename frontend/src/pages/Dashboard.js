@@ -46,7 +46,7 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  if (loading && workspaces.length === 0) {
+  if (loading && (!workspaces || workspaces.length === 0)) {
     return (
       <div className="dashboard">
         <Header />
@@ -97,14 +97,14 @@ const Dashboard = () => {
               {error && <div className="error-message">{error}</div>}
 
               <div className="workspaces-grid">
-                {workspaces.length === 0 ? (
+                {!workspaces || workspaces.length === 0 ? (
                   <div className="empty-state">
                     <Users size={48} />
                     <h3>No workspaces yet</h3>
                     <p>Create your first workspace to start uploading files and chatting!</p>
                   </div>
                 ) : (
-                  workspaces.map((workspace) => (
+                  (Array.isArray(workspaces) ? workspaces : []).map((workspace) => (
                     <div 
                       key={workspace.id}
                       className="workspace-card"

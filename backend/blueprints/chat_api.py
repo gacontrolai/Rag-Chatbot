@@ -16,7 +16,7 @@ workspace_service = WorkspaceService()
 # Workspace endpoints (focused on file management and RAG)
 @chat_bp.route('/workspaces', methods=['POST'])
 @jwt_required()
-@limiter.limit("10 per hour")
+@limiter.limit("100 per hour")  # Increased for development/testing
 def create_workspace():
     """Create a new workspace for file management and RAG"""
     try:
@@ -49,6 +49,7 @@ def create_workspace():
 
 @chat_bp.route('/workspaces', methods=['GET'])
 @jwt_required()
+@limiter.limit("300 per hour")  # Allow frequent workspace listing
 def get_workspaces():
     """Get user's workspaces"""
     try:
@@ -75,6 +76,7 @@ def get_workspaces():
 
 @chat_bp.route('/workspaces/<workspace_id>', methods=['GET'])
 @jwt_required()
+# @limiter.limit("200 per hour")  # Temporarily disabled for testing
 def get_workspace(workspace_id):
     """Get workspace by ID"""
     try:
@@ -128,17 +130,20 @@ def get_workspace_threads(workspace_id):
 # Independent Thread endpoints
 @chat_bp.route('/threads', methods=['POST'])
 @jwt_required()
-@limiter.limit("20 per hour")
+@limiter.limit("100 per hour")
 def create_thread():
     """Create a new independent chat thread (optionally with workspace reference)"""
     try:
         current_user_id = get_jwt_identity()
         data = request.get_json() or {}
         
+        print(f"Creating thread with data: {data}")
         thread_data = ThreadCreate(**data)
         thread = chat_service.create_thread(current_user_id, thread_data)
         
-        return {'thread': thread.dict()}, 201
+        response_data = {'thread': thread.dict()}
+        print(f"Thread created successfully: {response_data}")
+        return response_data, 201
         
     except PydanticValidationError as e:
         return {
@@ -274,20 +279,24 @@ def delete_thread(thread_id):
 # Message endpoints
 @chat_bp.route('/threads/<thread_id>/messages', methods=['POST'])
 @jwt_required()
-@limiter.limit("60 per hour")
+@limiter.limit("300 per hour")
 def send_message(thread_id):
     """Send a message to the chatbot"""
     try:
+        print(f"Sending message to thread: {thread_id}")
         current_user_id = get_jwt_identity()
         data = request.get_json()
         
         if not data:
             return {'error': {'code': 'VALIDATION_ERROR', 'message': 'Request body is required'}}, 400
         
+        print(f"Message data: {data}")
         message_data = MessageCreate(**data)
         message = chat_service.send_message(thread_id, current_user_id, message_data)
         
-        return {'message': message.dict()}, 201
+        response_data = {'message': message.dict()}
+        print(f"Message sent successfully: {response_data}")
+        return response_data, 201
         
     except PydanticValidationError as e:
         return {
@@ -314,6 +323,7 @@ def send_message(thread_id):
 def get_thread_messages(thread_id):
     """Get messages in a thread"""
     try:
+        print(f"Getting messages for thread: {thread_id}")
         current_user_id = get_jwt_identity()
         page = request.args.get('page', 1, type=int)
         limit = request.args.get('limit', 50, type=int)
@@ -321,11 +331,13 @@ def get_thread_messages(thread_id):
         
         messages = chat_service.get_thread_messages(thread_id, current_user_id, skip=skip, limit=limit)
         
-        return {
+        response_data = {
             'messages': [msg.dict() for msg in messages],
             'page': page,
             'limit': limit
-        }, 200
+        }
+        print(f"Returning {len(messages)} messages for thread {thread_id}")
+        return response_data, 200
         
     except ValidationError as e:
         return format_error_response(e, 400)

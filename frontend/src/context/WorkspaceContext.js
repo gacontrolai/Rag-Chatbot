@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer, useCallback } from 'react';
 import { workspaceService } from '../services/apiService';
 
 // Initial state
@@ -72,21 +72,23 @@ export const WorkspaceProvider = ({ children }) => {
   const [state, dispatch] = useReducer(workspaceReducer, initialState);
 
   // Fetch workspaces
-  const fetchWorkspaces = async () => {
+  const fetchWorkspaces = useCallback(async () => {
     dispatch({ type: WORKSPACE_ACTIONS.SET_LOADING, payload: true });
     try {
       const workspaces = await workspaceService.getWorkspaces();
-      dispatch({ type: WORKSPACE_ACTIONS.SET_WORKSPACES, payload: workspaces });
+      // Ensure workspaces is always an array
+      const workspacesArray = Array.isArray(workspaces) ? workspaces : [];
+      dispatch({ type: WORKSPACE_ACTIONS.SET_WORKSPACES, payload: workspacesArray });
     } catch (error) {
       dispatch({ 
         type: WORKSPACE_ACTIONS.SET_ERROR, 
         payload: error.response?.data?.message || 'Failed to fetch workspaces' 
       });
     }
-  };
+  }, []);
 
   // Create workspace
-  const createWorkspace = async (workspaceData) => {
+  const createWorkspace = useCallback(async (workspaceData) => {
     dispatch({ type: WORKSPACE_ACTIONS.SET_LOADING, payload: true });
     try {
       const newWorkspace = await workspaceService.createWorkspace(workspaceData);
@@ -99,10 +101,10 @@ export const WorkspaceProvider = ({ children }) => {
       });
       throw error;
     }
-  };
+  }, []);
 
   // Set current workspace
-  const setCurrentWorkspace = async (workspaceId) => {
+  const setCurrentWorkspace = useCallback(async (workspaceId) => {
     dispatch({ type: WORKSPACE_ACTIONS.SET_LOADING, payload: true });
     try {
       const workspace = await workspaceService.getWorkspace(workspaceId);
@@ -113,12 +115,12 @@ export const WorkspaceProvider = ({ children }) => {
         payload: error.response?.data?.message || 'Failed to fetch workspace' 
       });
     }
-  };
+  }, []);
 
   // Clear error
-  const clearError = () => {
+  const clearError = useCallback(() => {
     dispatch({ type: WORKSPACE_ACTIONS.CLEAR_ERROR });
-  };
+  }, []);
 
   const value = {
     ...state,

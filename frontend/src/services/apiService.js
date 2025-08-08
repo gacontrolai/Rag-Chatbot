@@ -54,12 +54,12 @@ export const workspaceService = {
 
   getWorkspaces: async () => {
     const response = await api.get('/v1/workspaces');
-    return response.data;
+    return response.data.workspaces || [];
   },
 
   getWorkspace: async (workspaceId) => {
     const response = await api.get(`/v1/workspaces/${workspaceId}`);
-    return response.data;
+    return response.data.workspace;
   },
 
   getWorkspaceThreads: async (workspaceId) => {
