@@ -1077,11 +1077,11 @@ body {
 /* ChatGPT-like Interface with References Panel */
 .gpt-interface {
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 72px); /* Account for header height */
   width: 100vw;
   background: #ffffff;
   position: fixed;
-  top: 0;
+  top: 72px; /* Position below header */
   left: 0;
   right: 0;
   bottom: 0;
@@ -1670,7 +1670,7 @@ body {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 1050; /* Increased z-index to appear above other elements */
   margin-top: 4px;
   overflow: hidden;
   animation: dropdownSlide 0.2s ease-out;
@@ -1769,6 +1769,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Important: allows flexbox child to shrink for proper scrolling */
 }
 
 .chat-welcome {
@@ -1815,6 +1816,7 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
+  min-height: 0; /* Important: allows flexbox child to shrink for proper scrolling */
 }
 
 .messages {
