@@ -49,7 +49,7 @@ export const authService = {
 export const workspaceService = {
   createWorkspace: async (workspaceData) => {
     const response = await api.post('/v1/workspaces', workspaceData);
-    return response.data;
+    return response.data.workspace; // Extract workspace from response
   },
 
   getWorkspaces: async () => {
