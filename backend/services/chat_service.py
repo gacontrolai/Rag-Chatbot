@@ -46,16 +46,36 @@ class ChatService:
         
         # System prompt for the AI assistant
         self.system_prompt = """You are a helpful AI assistant. You can help users with various tasks and questions.
-        When documents from a workspace are available, you can use them to provide more accurate and contextual responses.
-        Your goals are to:
-        
-        1. Provide accurate, helpful responses based on the conversation context
-        2. Use document information when available to ground your responses
-        3. Maintain a natural, conversational tone
-        4. If referencing documents, mention them naturally
-        5. If no relevant documents are found, clearly indicate you're providing general knowledge
-        
-        Always be helpful, concise, and accurate in your responses."""
+
+        When documents from a workspace are provided, use them to give accurate, contextual, and grounded responses. 
+        Follow these rules:
+
+        1. Always provide accurate, concise, and helpful responses based on the conversation context.
+        2. If relevant workspace documents are available, prioritize using their information to ground your answer.
+        3. Maintain a natural, conversational tone in your explanations.
+        4. If referencing a document, wrap ONLY the answer relevant to the question in tags using the following format:
+        <ref id='document_id'> ... relevant answer... </ref>
+        - Use multiple <ref> tags if multiple documents are referenced.
+        5. If no relevant document exists for the answer, say exactly: "I don't have any information about that".
+        6. Output MUST be in valid JSON format with the following structure:
+        {
+            "response": "<string — your response with <ref> tags embedded>",
+            "references": {
+                "<document_id1>": {
+                    "title": "<title of the document>",
+                    "text": "<exact text snippet used>",
+                    "line": "<line number or location in the document>"
+                },
+                "<document_id2>": { ... }
+            }
+        }
+        7. Only include documents in "references" that are actually used in the "response".
+
+        Your primary objectives:
+        - Be accurate and truthful.
+        - Use workspace documents when they are relevant.
+        - Ensure <ref> tags are properly formatted for easy parsing by frontend.
+        """
     
     def create_thread(self, user_id: str, thread_data: ThreadCreate) -> ThreadResponse:
         """Create a new independent chat thread"""
@@ -105,31 +125,52 @@ class ChatService:
         if workspace_id and not self.workspace_repo.is_member(workspace_id, user_id):
             raise PermissionError("Access denied to referenced workspace")
         
-        # Save user message
-        user_message_id = self.message_repo.create_message(
-            thread_id=thread_id,
-            role=MessageRole.USER,
-            content=message_data.content.strip()
+        # Prepare user content and optionally attach RAG context BEFORE saving the user message
+        user_content = message_data.content.strip()
+        context_chunks: List[Dict[str, Any]] = []
+        if message_data.use_rag and workspace_id:
+            context_chunks = self.rag_service.search_context(
+                workspace_id=workspace_id,
+                query=user_content,
+                top_k=message_data.top_k
+            )
+        
+        # Build the exact user message that will be sent to the LLM (includes RAG context text)
+        prepared_user_message = self._build_user_message_with_context(
+            user_content=user_content,
+            context_chunks=context_chunks,
+            workspace_id=workspace_id
         )
         
-        if not user_message_id:
-            raise Exception("Failed to save user message")
+        # # Save user message (store the real message that is sent to AI)
+        # user_message_id = self.message_repo.create_message(
+        #     thread_id=thread_id,
+        #     role=MessageRole.USER,
+        #     content=prepared_user_message
+        # )
         
-        # Get user message for response
-        user_message = self.message_repo.find_by_id(user_message_id)
-        user_response = MessageResponse(
-            id=user_message['id'],
-            thread_id=user_message['thread_id'],
-            role=user_message['role'],
-            content=user_message['content'],
-            metadata=user_message.get('metadata'),
-            created_at=user_message['created_at']
-        )
+        # if not user_message_id:
+        #     raise Exception("Failed to save user message")
         
-        # Generate AI response
+        # # Get user message for response
+        # user_message = self.message_repo.find_by_id(user_message_id)
+        # user_response = MessageResponse(
+        #     id=user_message['id'],
+        #     thread_id=user_message['thread_id'],
+        #     role=user_message['role'],
+        #     content=user_message['content'],
+        #     metadata=user_message.get('metadata'),
+        #     created_at=user_message['created_at']
+        # )
+        
+        # Generate AI response using the prepared message and precomputed context
         try:
             ai_response_content = self._generate_ai_response(
-                thread, message_data, user_message['content']
+                thread=thread,
+                message_data=message_data,
+                user_content=user_content,
+                context_chunks=context_chunks,
+                prepared_user_message=prepared_user_message
             )
             
             # Calculate latency
@@ -141,6 +182,15 @@ class ChatService:
                 model=os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo') if self.llm else "pattern-based",
                 latency_ms=latency_ms
             )
+
+        # Save user message (store the real message that is sent to AI)
+            user_message_id = self.message_repo.create_message(
+                thread_id=thread_id,
+                role=MessageRole.USER,
+                content=prepared_user_message
+            )
+            if not user_message_id:
+                raise Exception("Failed to save user message")
             
             # Save AI message
             ai_message_id = self.message_repo.create_message(
@@ -165,38 +215,50 @@ class ChatService:
                     metadata=ai_message.get('metadata'),
                     created_at=ai_message['created_at']
                 )
-        
         except Exception as e:
             print(f"Error generating AI response: {e}")
             # Return user message if AI fails
             pass
         
-        return user_response
+        # return user_response
     
-    def _generate_ai_response(self, thread: Dict[str, Any], message_data: MessageCreate, user_content: str) -> str:
+    def _build_user_message_with_context(self, user_content: str, context_chunks: List[Dict[str, Any]],
+                                         workspace_id: Optional[str]) -> str:
+        """Construct the exact user message (with RAG context) that is sent to the LLM."""
+        context_text = ""
+        if context_chunks:
+            context_text = "\n\n<RAG_CONTEXT>\n"
+            for i, chunk in enumerate(context_chunks, 1):
+                snippet = chunk['text'][:300]
+                suffix = '...' if len(chunk['text']) > 300 else ''
+                context_text += f"\nDocument {chunk['filename']}:\n{snippet}{suffix}\n"
+            context_text += "\n</RAG_CONTEXT>\n"
+        elif workspace_id:
+            context_text = "\n\n(No relevant documents found in the workspace for this query)\n"
+        
+        return f"{context_text}\nUser: {user_content}"
+    
+    def _generate_ai_response(self, thread: Dict[str, Any], message_data: MessageCreate, user_content: str,
+                              context_chunks: Optional[List[Dict[str, Any]]] = None,
+                              prepared_user_message: Optional[str] = None) -> str:
         """Generate AI response using LangChain and OpenAI or fallback to basic response"""
         try:
-            # Get conversation context
+            # Get conversation context (exclude the current just-saved message to avoid duplication)
             recent_messages = self.message_repo.get_recent_messages(thread['id'], limit=10)
-            
-            # RAG retrieval if enabled and workspace is available
-            context_chunks = []
-            workspace_id = thread.get('workspace_id')
-            if message_data.use_rag and workspace_id:
-                context_chunks = self.rag_service.search_context(
-                    workspace_id=workspace_id,
-                    query=user_content,
-                    top_k=message_data.top_k
-                )
             
             # Use LangChain if available
             if self.llm:
                 return self._generate_langchain_response(
-                    user_content, context_chunks, recent_messages, message_data.temperature, workspace_id
+                    user_content=user_content,
+                    context_chunks=context_chunks or [],
+                    recent_messages=recent_messages,
+                    temperature=message_data.temperature,
+                    workspace_id=thread.get('workspace_id'),
+                    prepared_user_message=prepared_user_message
                 )
             else:
                 # Fallback to basic response
-                return self._create_basic_response(user_content, context_chunks, recent_messages)
+                return self._create_basic_response(user_content, context_chunks or [], recent_messages)
             
         except Exception as e:
             print(f"Error in _generate_ai_response: {e}")
@@ -204,7 +266,8 @@ class ChatService:
             return f"I understand you're asking about: '{user_content[:100]}{'...' if len(user_content) > 100 else ''}'. I'm processing your request and will provide a detailed response. Due to a temporary issue, I'm providing this placeholder response."
     
     def _generate_langchain_response(self, user_content: str, context_chunks: List[Dict], 
-                                   recent_messages: List[Dict], temperature: float, workspace_id: Optional[str]) -> str:
+                                     recent_messages: List[Dict], temperature: float, workspace_id: Optional[str],
+                                     prepared_user_message: Optional[str] = None) -> str:
         """Generate response using LangChain and OpenAI"""
         try:
             # Prepare messages for LangChain
@@ -217,19 +280,14 @@ class ChatService:
                 elif msg['role'] == MessageRole.ASSISTANT:
                     messages.append(AIMessage(content=msg['content']))
             
-            # Prepare context from documents if available
-            context_text = ""
-            if context_chunks:
-                context_text = "\n\nRELEVANT DOCUMENTS:\n"
-                for i, chunk in enumerate(context_chunks, 1):
-                    context_text += f"\nDocument {i}:\n{chunk['text'][:300]}{'...' if len(chunk['text']) > 300 else ''}\n"
-                context_text += "\nEND OF DOCUMENTS\n"
-            elif workspace_id:
-                context_text = "\n\n(No relevant documents found in the workspace for this query)\n"
-            
-            # Create the user message with context
-            user_message_with_context = f"{context_text}\nUser: {user_content}"
-            messages.append(HumanMessage(content=user_message_with_context))
+            # Create the user message with context (use pre-built to ensure exact match with stored content)
+            if prepared_user_message is None:
+                prepared_user_message = self._build_user_message_with_context(
+                    user_content=user_content,
+                    context_chunks=context_chunks,
+                    workspace_id=workspace_id
+                )
+            messages.append(HumanMessage(content=prepared_user_message))
             
             # Update LLM temperature for this specific request
             self.llm.temperature = temperature
