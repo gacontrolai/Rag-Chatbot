@@ -81,7 +81,7 @@ class FileService:
                     for i, chunk in enumerate(content_data['chunks']):
                         embedding = embeddings[i] if i < len(embeddings) else []
                         text_chunks.append({
-                            'chunk_id': chunk['chunk_id'],
+                            'sequence': chunk['sequence'],
                             'text': chunk['text'],
                             'embedding': embedding,
                             'start_pos': chunk['start_pos'],

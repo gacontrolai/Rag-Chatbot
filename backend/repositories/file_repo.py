@@ -171,7 +171,7 @@ class FileRepository:
                 {'$project': {
                     'file_id': {'$toString': '$_id'},
                     'filename': '$filename',
-                    'chunk_id': '$text_chunks.chunk_id',
+                    'sequence': '$text_chunks.sequence',
                     'text': '$text_chunks.text',
                     'embedding': '$text_chunks.embedding',
                     'start_pos': '$text_chunks.start_pos',
@@ -201,7 +201,7 @@ class FileRepository:
                 {'$project': {
                     'file_id': {'$toString': '$_id'},
                     'filename': '$filename',
-                    'chunk_id': '$text_chunks.chunk_id',
+                    'sequence': '$text_chunks.sequence',
                     'text': '$text_chunks.text',
                     'start_pos': '$text_chunks.start_pos',
                     'end_pos': '$text_chunks.end_pos',

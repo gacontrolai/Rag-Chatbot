@@ -12,7 +12,7 @@ class FileStatus(str, Enum):
     FAILED = "failed"
 
 class TextChunk(BaseModel):
-    chunk_id: str = Field(default_factory=lambda: str(uuid4()), description="Unique chunk identifier")
+    sequence: str = Field(default_factory=lambda: str(uuid4()), description="Unique chunk identifier")
     text: str = Field(..., description="Text content of the chunk")
     embedding: Optional[List[float]] = Field(None, description="Vector embedding of the chunk")
 

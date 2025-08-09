@@ -227,11 +227,12 @@ class ChatService:
         """Construct the exact user message (with RAG context) that is sent to the LLM."""
         context_text = ""
         if context_chunks:
-            context_text = "\n\n<RAG_CONTEXT>\n"
+            context_text = "<RAG_CONTEXT>\n"
             for i, chunk in enumerate(context_chunks, 1):
-                snippet = chunk['text'][:300]
-                suffix = '...' if len(chunk['text']) > 300 else ''
-                context_text += f"\nDocument {chunk['filename']}:\n{snippet}{suffix}\n"
+                snippet = chunk['text']
+                # suffix = '...' if len(chunk['text']) > 300 else ''
+                # context_text += f"\nDocument {chunk['filename']}:\n{snippet}{suffix}\n"
+                context_text += f"\n##{i}.Document {chunk['filename']}(from line {chunk['start_pos']} to line {chunk['end_pos']}):\n{snippet}\n"
             context_text += "\n</RAG_CONTEXT>\n"
         elif workspace_id:
             context_text = "\n\n(No relevant documents found in the workspace for this query)\n"

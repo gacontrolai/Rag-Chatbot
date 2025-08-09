@@ -51,8 +51,8 @@ class VectorService:
             if not chunk.get('embedding'):
                 continue
                 
-            pinecone_id = self.pinecone_service.create_chunk_id(
-                workspace_id, file_id, str(chunk['chunk_id'])
+            pinecone_id = self.pinecone_service.create_sequence(
+                workspace_id, file_id, str(chunk['sequence'])
             )
             
             embedding_data = {
@@ -61,7 +61,7 @@ class VectorService:
                 'workspace_id': workspace_id,
                 'file_id': file_id,
                 'filename': chunk.get('filename', ''),
-                'chunk_id': str(chunk['chunk_id']),
+                'sequence': str(chunk['sequence']),
                 'text': chunk['text'],
                 'start_pos': chunk.get('start_pos', 0),
                 'end_pos': chunk.get('end_pos', 0),

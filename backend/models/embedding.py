@@ -8,7 +8,7 @@ class EmbeddingSearch(BaseModel):
     top_k: int = Field(default=5, ge=1, le=20, description="Number of results to return")
 
 class EmbeddingResult(BaseModel):
-    chunk_id: str = Field(..., description="Chunk identifier")
+    sequence: str = Field(..., description="Chunk identifier")
     text: str = Field(..., description="Text content")
     score: float = Field(..., description="Similarity score")
     file_id: str = Field(..., description="Source file ID")
@@ -17,7 +17,7 @@ class Embedding(BaseModel):
     """MongoDB Embedding document schema (if using separate collection)"""
     workspace_id: str  # ObjectId as string
     file_id: str       # ObjectId as string
-    chunk_id: str      # UUID as string
+    sequence: str      # UUID as string
     text: str
     vector: List[float]
     created_at: datetime = Field(default_factory=datetime.utcnow)

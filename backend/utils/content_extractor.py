@@ -11,7 +11,7 @@ class ContentExtractor:
     """Utility class for extracting text content from various file formats"""
     
     SUPPORTED_FORMATS = {'.txt', '.csv', '.docx'}
-    MAX_CHUNK_SIZE = 1000  # Maximum characters per chunk
+    MAX_CHUNK_SIZE = 500  # Maximum characters per chunk
     CHUNK_OVERLAP = 100    # Overlap between chunks
     
     @classmethod
@@ -165,7 +165,7 @@ class ContentExtractor:
         if text_len <= cls.MAX_CHUNK_SIZE:
             # Text is small enough to be a single chunk
             chunks.append({
-                'chunk_id': 0,
+                'sequence': 0,
                 'text': text.strip(),
                 'start_pos': 0,
                 'end_pos': text_len,
@@ -174,7 +174,7 @@ class ContentExtractor:
         else:
             # Split into multiple chunks with overlap
             start = 0
-            chunk_id = 0
+            sequence = 0
             
             while start < text_len:
                 end = min(start + cls.MAX_CHUNK_SIZE, text_len)
@@ -197,13 +197,13 @@ class ContentExtractor:
                 chunk_text = text[start:end].strip()
                 if chunk_text:
                     chunks.append({
-                        'chunk_id': chunk_id,
+                        'sequence': sequence,
                         'text': chunk_text,
                         'start_pos': start,
                         'end_pos': end,
                         'char_count': len(chunk_text)
                     })
-                    chunk_id += 1
+                    sequence += 1
                 
                 # Move start position with overlap consideration
                 start = max(start + cls.MAX_CHUNK_SIZE - cls.CHUNK_OVERLAP, end)

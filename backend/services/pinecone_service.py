@@ -73,7 +73,7 @@ class PineconeService:
                         'workspace_id': data.get('workspace_id'),
                         'file_id': data.get('file_id'),
                         'filename': data.get('filename'),
-                        'chunk_id': data.get('chunk_id'),
+                        'sequence': data.get('sequence'),
                         'text': data.get('text', '')[:40000],  # Pinecone metadata limit
                         'start_pos': data.get('start_pos', 0),
                         'end_pos': data.get('end_pos', 0),
@@ -123,7 +123,7 @@ class PineconeService:
                     'similarity': float(match.score),
                     'file_id': match.metadata.get('file_id'),
                     'filename': match.metadata.get('filename'),
-                    'chunk_id': match.metadata.get('chunk_id'),
+                    'sequence': match.metadata.get('sequence'),
                     'text': match.metadata.get('text', ''),
                     'start_pos': match.metadata.get('start_pos', 0),
                     'end_pos': match.metadata.get('end_pos', 0)
@@ -204,6 +204,6 @@ class PineconeService:
             print(f"Error getting Pinecone stats: {e}")
             return {'available': False, 'error': str(e)}
     
-    def create_chunk_id(self, workspace_id: str, file_id: str, chunk_id: str) -> str:
+    def create_sequence(self, workspace_id: str, file_id: str, sequence: str) -> str:
         """Create a unique ID for Pinecone vector"""
-        return f"{workspace_id}_{file_id}_{chunk_id}" 
+        return f"{workspace_id}_{file_id}_{sequence}" 

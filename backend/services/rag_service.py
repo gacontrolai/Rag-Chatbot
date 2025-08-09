@@ -76,11 +76,14 @@ class RAGService:
             context_chunks = []
             for chunk in similar_chunks:
                 context_chunks.append({
+                    'id': chunk.get('id'),
+                    "start_pos": chunk.get('start_pos'),
+                    "end_pos": chunk.get('end_pos'),
                     'text': chunk['text'],
                     'score': chunk.get('similarity', 0.0),
                     'file_id': chunk.get('file_id'),
                     'filename': chunk.get('filename'),
-                    'chunk_id': chunk.get('chunk_id'),
+                    'sequence': chunk.get('sequence'),
                     'search_method': 'semantic'
                 })
             
@@ -103,7 +106,7 @@ class RAGService:
                     'score': result.get('similarity', 0.5),
                     'file_id': result.get('file_id'),
                     'filename': result.get('filename'),
-                    'chunk_id': result.get('chunk_id'),
+                    'sequence': result.get('sequence'),
                     'search_method': 'text'
                 })
             
