@@ -1077,17 +1077,17 @@ body {
 /* ChatGPT-like Interface with References Panel */
 .gpt-interface {
   display: flex;
-  height: calc(100vh - 80px); /* Reduced from 72px to 60px */
+  height: calc(100vh - 72px);
   width: 100vw;
   background: #ffffff;
   position: fixed;
-  top: 70px; /* Reduced from 72px to 60px - moves chatbox up */
+  top: 72px;
   left: 0;
   right: 0;
   bottom: 0;
 }
 
-/* Sidebar - Responsive sizing */
+/* Sidebar - Chat threads (1 distinct object, scrollable) */
 .gpt-sidebar {
   width: 20vw;
   min-width: 250px;
@@ -1097,12 +1097,68 @@ body {
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
+  /* This is 1 distinct scrollable object */
 }
 
 .gpt-sidebar.closed {
   width: 0;
   min-width: 0;
   overflow: hidden;
+}
+
+/* Main chat area - restructured into 3 distinct objects */
+.gpt-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  /* Container for the 3 distinct objects */
+}
+
+/* Object 1: Switch workspace (fixed at top) */
+.chat-header {
+  height: 60px; /* Fixed height */
+  min-height: 60px; /* Prevent shrinking */
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 15px;
+  /* This is 1 distinct fixed object */
+  flex-shrink: 0; /* Don't shrink */
+}
+
+/* Object 2 & 3: Chat container with messages and input */
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Important for flexbox scrolling */
+  /* Container for messages (scrollable) and input (fixed) */
+}
+
+/* Object 2: Chat history (scrollable middle section) */
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  min-height: 0; /* Important: allows flexbox child to shrink for proper scrolling */
+  background: #ffffff;
+  /* This is 1 distinct scrollable object */
+}
+
+/* Object 3: Chatbox input (fixed at bottom) */
+.input-area {
+  height: 80px; /* Fixed height */
+  min-height: 80px; /* Prevent shrinking */
+  background: #ffffff;
+  border-top: 1px solid #e5e5e5;
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  /* This is 1 distinct fixed object */
+  flex-shrink: 0; /* Don't shrink */
 }
 
 .sidebar-header {
@@ -1376,17 +1432,8 @@ body {
 }
 
 /* Main chat area */
-.gpt-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
-  min-width: 0;
-  width: auto; /* Let it take remaining space */
-  height: 100vh;
-}
-
 /* References panel - Responsive sizing */
+/* References Panel - Right sidebar (1 distinct object, scrollable) */
 .references-panel {
   width: 22vw;
   min-width: 280px;
@@ -1396,7 +1443,7 @@ body {
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
-  height: 100vh;
+  /* This is 1 distinct scrollable object */
 }
 
 .references-panel.hidden {
@@ -1590,15 +1637,7 @@ body {
   font-weight: 500;
 }
 
-.chat-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e5e5e5;
-  background: #ffffff;
-}
-
+/* Sidebar toggle and header styles */
 .sidebar-toggle {
   background: none;
   border: none;
@@ -1896,15 +1935,11 @@ body {
 }
 
 /* Input area */
-.input-area {
-  padding: 20px;
-  border-top: 1px solid #e5e5e5;
-  background: #ffffff;
-}
-
+/* Input container styles */
 .input-container {
-  max-width: 800px;
+  max-width: 1200px; /* Increased to make chatbox longer while keeping send button inside */
   margin: 0 auto;
+  width: 95%; /* Use most of the available space */
 }
 
 .input-wrapper {
@@ -1945,7 +1980,7 @@ body {
   line-height: 1.4;
   resize: none;
   max-height: 120px;
-  min-height: 24px;
+  min-height: 24px; /* Increased from 24px to 60px to make chatbox longer */
   background: transparent;
   color: #333;
 }
