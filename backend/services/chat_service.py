@@ -10,6 +10,7 @@ from models.message import MessageCreate, MessageResponse, MessageRole, MessageM
 from models.thread import ThreadCreate, ThreadResponse
 from utils.exceptions import ValidationError, PermissionError
 from services.rag_service import RAGService
+from prompts.prompt_manager import PromptManager
 
 # LangChain imports
 try:
@@ -27,6 +28,7 @@ class ChatService:
         self.workspace_repo = WorkspaceRepository()
         self.file_repo = FileRepository()
         self.rag_service = RAGService()
+        self.prompt_manager = PromptManager()
         
         # Initialize LangChain components if available
         self.llm = None
@@ -43,39 +45,6 @@ class ChatService:
             except Exception as e:
                 print(f"Failed to initialize LangChain ChatOpenAI: {e}")
                 self.llm = None
-        
-        # System prompt for the AI assistant
-        self.system_prompt = """You are a helpful AI assistant. You can help users with various tasks and questions.
-
-        When documents from a workspace are provided, use them to give accurate, contextual, and grounded responses. 
-        Follow these rules:
-
-        1. Always provide accurate, concise, and helpful responses based on the conversation context.
-        2. If relevant workspace documents are available, prioritize using their information to ground your answer.
-        3. Maintain a natural, conversational tone in your explanations.
-        4. If referencing a document, wrap ONLY the answer relevant to the question in tags using the following format:
-        <ref id='document_id'> ... relevant answer... </ref>
-        - Use multiple <ref> tags if multiple documents are referenced.
-        5. If no relevant document exists for the answer, say exactly: "I don't have any information about that".
-        6. Output MUST be in valid JSON format with the following structure:
-        {
-            "response": "<string — your response with <ref> tags embedded>",
-            "references": {
-                "<document_id1>": {
-                    "title": "<title of the document>",
-                    "text": "<exact text snippet used>",
-                    "line": "<line number or location in the document>"
-                },
-                "<document_id2>": { ... }
-            }
-        }
-        7. Only include documents in "references" that are actually used in the "response".
-
-        Your primary objectives:
-        - Be accurate and truthful.
-        - Use workspace documents when they are relevant.
-        - Ensure <ref> tags are properly formatted for easy parsing by frontend.
-        """
     
     def create_thread(self, user_id: str, thread_data: ThreadCreate) -> ThreadResponse:
         """Create a new independent chat thread"""
@@ -225,19 +194,11 @@ class ChatService:
     def _build_user_message_with_context(self, user_content: str, context_chunks: List[Dict[str, Any]],
                                          workspace_id: Optional[str]) -> str:
         """Construct the exact user message (with RAG context) that is sent to the LLM."""
-        context_text = ""
-        if context_chunks:
-            context_text = "<RAG_CONTEXT>\n"
-            for i, chunk in enumerate(context_chunks, 1):
-                snippet = chunk['text']
-                # suffix = '...' if len(chunk['text']) > 300 else ''
-                # context_text += f"\nDocument {chunk['filename']}:\n{snippet}{suffix}\n"
-                context_text += f"\n##{i}.Document {chunk['filename']}(from line {chunk['start_pos']} to line {chunk['end_pos']}):\n{snippet}\n"
-            context_text += "\n</RAG_CONTEXT>\n"
-        elif workspace_id:
-            context_text = "\n\n(No relevant documents found in the workspace for this query)\n"
-        
-        return f"{context_text}\nUser: {user_content}"
+        return self.prompt_manager.format_user_context_message(
+            user_message=user_content,
+            context_chunks=context_chunks,
+            workspace_id=workspace_id
+        )
     
     def _generate_ai_response(self, thread: Dict[str, Any], message_data: MessageCreate, user_content: str,
                               context_chunks: Optional[List[Dict[str, Any]]] = None,
@@ -272,7 +233,7 @@ class ChatService:
         """Generate response using LangChain and OpenAI"""
         try:
             # Prepare messages for LangChain
-            messages = [SystemMessage(content=self.system_prompt)]
+            messages = [SystemMessage(content=self.prompt_manager.get_system_prompt())]
             
             # Add conversation history (limit to prevent token overflow)
             for msg in recent_messages[-8:]:  # Last 8 messages to keep context manageable
